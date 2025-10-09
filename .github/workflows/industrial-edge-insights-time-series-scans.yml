@@ -186,21 +186,23 @@ jobs:
               sed -i -e "s|OPC_UA_SERVER_IMAGE=.*|OPC_UA_SERVER_IMAGE=ia-opcua-server:1.0.0-weekly|g" .env
               sed -i -e "s|MQTT_PUBLISHER_IMAGE=.*|MQTT_PUBLISHER_IMAGE=ia-mqtt-publisher:1.1.0-weekly|g" .env
               make build
+              source .env
+              IMAGE_TO_SCAN1=${MQTT_PUBLISHER_IMAGE}${IMAGE_SUFFIX:+-${IMAGE_SUFFIX}}
+              IMAGE_TO_SCAN2=${OPC_UA_SERVER_IMAGE}${IMAGE_SUFFIX:+-${IMAGE_SUFFIX}}
+              trivy image "${IMAGE_TO_SCAN2}" --ignore-unfixed --format template --template "@trivy-html.tpl" -o trivy-image-scan-opcua-server-ignore-unfixed.html
+              trivy image "${IMAGE_TO_SCAN2}" --ignore-unfixed --format template --template "@csv.tpl" -o trivy-image-scan-opcua-server-ignore-unfixed.csv
+              trivy image --quiet --format spdx-json --output trivy-image-scan-opcua-server.spdx.json "${IMAGE_TO_SCAN2}"
 
-              trivy image intel/ia-opcua-server:1.0.0-weekly --ignore-unfixed --format template --template "@trivy-html.tpl" -o trivy-image-scan-opcua-server-ignore-unfixed.html
-              trivy image intel/ia-opcua-server:1.0.0-weekly --ignore-unfixed --format template --template "@csv.tpl" -o trivy-image-scan-opcua-server-ignore-unfixed.csv
-              trivy image --quiet --format spdx-json --output trivy-image-scan-opcua-server.spdx.json intel/ia-opcua-server:1.0.0-weekly
-
-              trivy image --list-all-pkgs --format template --template "@csv.tpl" --output trivy-image-scan_opcua-server-list-all-pkgs.csv intel/ia-opcua-server:1.0.0-weekly
-              trivy image --ignore-unfixed intel/ia-opcua-server:1.0.0-weekly | tee trivy-image-scan-opcua-server-ignore-unfixed.txt
+              trivy image --list-all-pkgs --format template --template "@csv.tpl" --output trivy-image-scan_opcua-server-list-all-pkgs.csv "${IMAGE_TO_SCAN2}"
+              trivy image --ignore-unfixed "${IMAGE_TO_SCAN2}" | tee trivy-image-scan-opcua-server-ignore-unfixed.txt
 
 
-              trivy image intel/ia-mqtt-publisher:1.1.0-weekly --ignore-unfixed --format template --template "@trivy-html.tpl" -o trivy-image-scan-mqtt-publisher-ignore-unfixed.html
-              trivy image intel/ia-mqtt-publisher:1.1.0-weekly --ignore-unfixed --format template --template "@csv.tpl" -o trivy-image-scan-mqtt-publisher-ignore-unfixed.csv
-              trivy image --quiet --format spdx-json --output trivy-image-scan-mqtt-publisher.spdx.json intel/ia-mqtt-publisher:1.1.0-weekly
+              trivy image "${IMAGE_TO_SCAN1}" --ignore-unfixed --format template --template "@trivy-html.tpl" -o trivy-image-scan-mqtt-publisher-ignore-unfixed.html
+              trivy image "${IMAGE_TO_SCAN1}" --ignore-unfixed --format template --template "@csv.tpl" -o trivy-image-scan-mqtt-publisher-ignore-unfixed.csv
+              trivy image --quiet --format spdx-json --output trivy-image-scan-mqtt-publisher.spdx.json "${IMAGE_TO_SCAN1}"
 
-              trivy image --list-all-pkgs --format template --template "@csv.tpl" --output trivy-image-scan-mqtt-publisher-list-all-pkgs.csv intel/ia-mqtt-publisher:1.1.0-weekly
-              trivy image --ignore-unfixed intel/ia-mqtt-publisher:1.1.0-weekly | tee trivy-image-scan-mqtt-publisher-ignore-unfixed.txt
+              trivy image --list-all-pkgs --format template --template "@csv.tpl" --output trivy-image-scan-mqtt-publisher-list-all-pkgs.csv "${IMAGE_TO_SCAN1}"
+              trivy image --ignore-unfixed "${IMAGE_TO_SCAN1}" | tee trivy-image-scan-mqtt-publisher-ignore-unfixed.txt
 
               echo "completed Wind Turbine Sample App Image scanning"
             
