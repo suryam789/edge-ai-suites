@@ -22,7 +22,7 @@ To deploy the **Smart Parking** Sample Application with the Edge Orchestrator, f
 
 1. Clusters with a [privilege template](<https://docs.openedgeplatform.intel.com/edge-manage-docs/main/user_guide/additional_howtos/set_up_a_cluster_template.html>) have been created on the needed Edge Nodes following the procedures described in [Create Cluster](<https://docs.openedgeplatform.intel.com/edge-manage-docs/main/user_guide/set_up_edge_infra/create_clusters.html#create-cluster>).
 
-### Making the Deployment Package Available
+### Make the Deployment Package Available
 
 1. Clone the **Smart Parking** repository:
 
@@ -33,9 +33,9 @@ To deploy the **Smart Parking** Sample Application with the Edge Orchestrator, f
 
 1. From the web browser, open the URL of the Edge Orchestrator and import the Deployment Package present in the folder **deployment-package** following the steps described in [Import Deployment Package](<https://docs.openedgeplatform.intel.com/edge-manage-docs/main/user_guide/package_software/import_deployment.html#import-deployment-package>).
 
-1. Once the deployment package has been imported into the Edge Orchestrator, you can see it in the list of Web UI.
+1. After you have imported the deployment package into Edge Orchestrator, you can see it in the list of deployment packages:
 
-**![Image](./_images/sp-dp.png)**
+   **![Image](./_images/sp-dp.png)**
 
 See [Deployment Packages](<https://docs.openedgeplatform.intel.com/edge-manage-docs/main/user_guide/package_software/deploy_packages.html#view-deployment-packages>) for more information on deployment packages.
 
@@ -78,8 +78,8 @@ For more information on setting up a deployment, see [Set up a Deployment](<http
 
 ### Access the **Smart Parking** Sample Application
 
-1. Download the kubeconfig of the cluster of the Edge Node on which the Application has been deployed. Refer [Kubeconfig Download](<https://docs.openedgeplatform.intel.com/edge-manage-docs/dev/user_guide/set_up_edge_infra/clusters/accessing_clusters.html>).
+1. Download the kubeconfig file of the edge node cluster that contains the deployed application. See  [Kubeconfig Download](<https://docs.openedgeplatform.intel.com/edge-manage-docs/dev/user_guide/set_up_edge_infra/clusters/accessing_clusters.html>).
 
-1. Follow the steps described in the **Smart Parking** [Documentation](<how-to-deploy-helm.md>) on usage of the application.
+1. Follow the steps in the **Smart Parking** [Documentation](<how-to-deploy-helm.md>) on the usage of the application.
 
-   > Note: Skip the Deploy helm chart step
+   > Note: Skip the Deploy Helm Chart step.
