@@ -82,4 +82,4 @@ For more information on setting up a deployment, see [Set up a Deployment](<http
 
 1. Follow the steps in the **Smart Intersection** [Documentation](<how-to-deploy-helm.md#step-3-deploy-the-application-and-run-multiple-ai-pipelines>) on the usage of the application.
 
-   > Note: Skip the Deploy Helm Chart step.
+   > Note: Skip the Deploy Helm chart step.
