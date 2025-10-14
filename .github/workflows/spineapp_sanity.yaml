@@ -57,15 +57,12 @@ jobs:
       run: | 
        sudo apt-get update
        sudo pip install robotframework
-       lspci | grep -i vga
        sudo apt install -y python3-nose libxml2-utils vlc
        cd edge-ai-suites-repo/manufacturing-ai-suite/industrial-edge-insights-vision/tests/robot_files
-       robot test.robot || true  &
-       sleep 480
-       docker logs dlstreamer-pipeline-server >> dlsps_logs.txt &
-       wait
+       robot test.robot 
+       
        mkdir -p /tmp/test_results
-       cp -r report.html log.html output.xml dlsps_logs.txt /tmp/test_results/
+       cp -r report.html log.html output.xml  /tmp/test_results/
        passed=$(xmllint --xpath "//return/status[@status='PASS']" ./output.xml | wc -l) || true
        failed=$(xmllint --xpath "//return/status[@status='FAIL']" ./output.xml | wc -l) || true
        not_run=$(xmllint --xpath "//return/status[@status='NOT RUN']" ./output.xml | wc -l) || true

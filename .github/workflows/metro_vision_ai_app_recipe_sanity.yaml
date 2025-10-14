@@ -60,15 +60,14 @@ jobs:
        
     - name: Sanity Test 
       run: | 
-       python3.12 -m venv venv
-       source venv/bin/activate      
-       python3.12 -m pip install  robotframework
-       python3.12 -m pip install  selenium
-       python3.12 -m pip install  robotframework-seleniumlibrary
-       python3.12 -m pip install  webdriver-manager
+       sudo apt-get update
+       sudo apt install -y python3-nose libxml2-utils vlc
+       sudo pip3 install selenium
+       sudo python3 -m pip install --upgrade pip      
+       sudo python3 -m pip install  robotframework 
        python3 -c "from selenium import webdriver; print('OK')"
        cd edge-ai-suites-repo/metro-ai-suite/metro-vision-ai-app-recipe/test-suite/robot_files
-       robot test.robot || true  
+       robot test.robot 
        mkdir -p /tmp/test_results
        cp -r report.html log.html output.xml  /tmp/test_results/
        passed=$(xmllint --xpath "//return/status[@status='PASS']" ./output.xml | wc -l) || true
