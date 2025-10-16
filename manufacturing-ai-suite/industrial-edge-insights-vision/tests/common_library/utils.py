@@ -61,7 +61,10 @@ class utils:
             self._update_env_file({
                 "HOST_IP": hostIP,
                 "MTX_WEBRTCICESERVERS2_0_USERNAME": "test1234",
-                "MTX_WEBRTCICESERVERS2_0_PASSWORD": "test1234"
+                "MTX_WEBRTCICESERVERS2_0_PASSWORD": "test1234",
+                "MR_MINIO_ACCESS_KEY": "test1234",
+                "MR_MINIO_SECRET_KEY": "test1234",
+                "MR_PSQL_PASSWORD": "test1234"
             })
             
             # Run setup and start services
