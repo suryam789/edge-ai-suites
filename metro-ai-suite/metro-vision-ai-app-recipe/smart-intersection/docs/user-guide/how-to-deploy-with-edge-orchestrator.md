@@ -31,7 +31,7 @@ To deploy the **Smart Intersection** Sample Application with the Edge Orchestrat
     cd metro-ai-suite/metro-vision-ai-app-recipe/smart-intersection
     ```
 
-1. From the web browser, open the URL of the Edge Orchestrator and import the Deployment Package in the folder **deployment-package** following the steps described in [Import Deployment Package](<https://docs.openedgeplatform.intel.com/edge-manage-docs/main/user_guide/package_software/import_deployment.html#import-deployment-package>).
+1. From the web browser, open the URL of the Edge Orchestrator and import the deployment package in the folder **deployment-package** following the steps described in [Import Deployment Package](<https://docs.openedgeplatform.intel.com/edge-manage-docs/main/user_guide/package_software/import_deployment.html#import-deployment-package>).
 
 1. After you have imported the deployment package into Edge Orchestrator, you can see it in the list of deployment packages:
 
