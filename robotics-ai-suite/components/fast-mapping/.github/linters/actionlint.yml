@@ -1,0 +1,27 @@
+# Copyright (C) 2025 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+self-hosted-runner:
+  labels:
+    - self-hosted
+    - edge-controls
+    - az-ch
+paths:
+  .github/**/*.yml:
+    ignore:
+      - SC2086
+      - SC2043
+      - SC2011
+      - SC2035
+      - SC2156
+      - C2038
+      - SC2061
+      - SC2129
+      - SC2006
+      - SC2005
+      - SC2046
+      - SC2143
+      - '.+ section is missing in workflow'
+      - 'unexpected key .+ for workflow section'
