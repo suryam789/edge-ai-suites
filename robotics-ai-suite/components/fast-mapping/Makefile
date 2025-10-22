@@ -157,8 +157,9 @@ clean: clean-debian clean-colcon
 source-package:
 	@# Help: Create source package tarball
 	git archive --format=zip -o fast-mapping-$(VERSION).zip HEAD \
-		.gitattributes .gitignore CMakeLists.txt Makefile package.xml README.md REUSE.toml \
-		.github/linters dependencies docs include launch LICENSES src
+		.bdsignore.all .gitattributes .gitignore CMakeLists.txt Makefile package.xml README.md REUSE.toml \
+		.github/linters dependencies docs include launch LICENSES src tests \
+		humble jazzy
 
 help:
 	@printf "%-20s %s\n" "Target" "Description"
