@@ -84,17 +84,15 @@ Create and run the model download script to install all required AI models:
 docker run --rm --user=root \
   -e http_proxy -e https_proxy -e no_proxy \
   -v "$PWD:/home/dlstreamer/metro-suite" \
-  intel/dlstreamer:2025.0.1.3-ubuntu24 bash -c "$(cat <<EOF
+  intel/dlstreamer:2025.1.2-ubuntu24 bash -c "$(cat <<EOF
 
 cd /home/dlstreamer/metro-suite/
 
 mkdir -p crowd-analytics/src/dlstreamer-pipeline-server/models/public
 export MODELS_PATH=/home/dlstreamer/metro-suite/crowd-analytics/src/dlstreamer-pipeline-server/models
-/home/dlstreamer/dlstreamer/samples/download_public_models.sh yolov10s
+/home/dlstreamer/dlstreamer/samples/download_public_models.sh yolo11s coco128
 
-mkdir -p crowd-analytics/src/dlstreamer-pipeline-server/models/intel
-
-python3 -m pip install openvino-dev[onnx,tensorflow2]
+# mkdir -p crowd-analytics/src/dlstreamer-pipeline-server/models/intel
 
 echo "Fix ownership..."
 chown -R "$(id -u):$(id -g)" crowd-analytics/src/dlstreamer-pipeline-server/models crowd-analytics/src/dlstreamer-pipeline-server/videos 2>/dev/null || true
@@ -131,19 +129,12 @@ Update the pipeline configuration to use the crowd analytics AI models. Create o
 cat > ./crowd-analytics/src/dlstreamer-pipeline-server/config.json << 'EOF'
 {
     "config": {
-        "logging": {
-            "C_LOG_LEVEL": "INFO",
-            "PY_LOG_LEVEL": "INFO"
-        },
-        "cert_type": [
-            "zmq"
-        ],
         "pipelines": [
             {
-                "name": "yolov10_1_cpu",
+                "name": "yolov11s_crowd_analytics",
                 "source": "gstreamer",
                 "queue_maxsize": 50,
-                "pipeline": "{auto_source} name=source ! decodebin ! gvadetect model=/home/pipeline-server/models/public/yolov10s/FP32/yolov10s.xml device=CPU pre-process-backend=ie threshold=0.5 ! queue ! gvatrack tracking-type=zero-term ! queue ! gvawatermark ! gvametaconvert add-empty-results=true name=metaconvert ! gvafpscounter ! appsink name=destination",
+                "pipeline": "{auto_source} name=source ! decodebin ! gvadetect model=/home/pipeline-server/models/public/yolo11s/INT8/yolo11s.xml device=CPU pre-process-backend=opencv name=detection ! queue ! gvatrack tracking-type=short-term-imageless ! queue ! gvametaconvert add-empty-results=true name=metaconvert ! queue ! gvafpscounter ! appsink name=destination",
                 "description": "Vehicle detection and tracking for crowd analytics",
                 "parameters": {
                     "type": "object",
@@ -153,19 +144,10 @@ cat > ./crowd-analytics/src/dlstreamer-pipeline-server/config.json << 'EOF'
                                 "name": "detection",
                                 "format": "element-properties"
                             }
-                        },
-                        "detection-device": {
-                            "element": {
-                                "name": "detection",
-                                "property": "device"
-                            },
-                            "type": "string",
-                            "default": "{env[DETECTION_DEVICE]}"
                         }
                     }
                 },
-                "auto_start": false,
-                "publish_frame": true
+                "auto_start": false
             }
         ]
     }
@@ -267,7 +249,7 @@ Start the AI pipeline and process the sample video:
 
 ```bash
 # Start the crowd analytics pipeline with the easy1.mp4 video (basic mode)
-curl -k -s https://localhost/api/pipelines/user_defined_pipelines/yolov10_1_cpu -X POST -H 'Content-Type: application/json' -d '
+curl -k -s https://localhost/api/pipelines/user_defined_pipelines/yolov11s_crowd_analytics -X POST -H 'Content-Type: application/json' -d '
 {
     "source": {
         "uri": "file:///home/pipeline-server/videos/easy1.mp4",
