@@ -28,24 +28,24 @@ Navigate to the `[WORKDIR]/edge-ai-suites/manufacturing-ai-suite/industrial-edge
 
 Choose the appropriate payload file based on your benchmarking objective:
 
-1. **Sample Application Performance (`payload.json`)**
-   - Uses CPU device for inference with WebRTC output
-   - Tests realistic application-level performance
-   - Includes end-to-end pipeline overhead
+1. **App's Best Performance (`gpu_payload.json`)**
+   - Uses GPU device with optimized settings and WebRTC output
+   - Tests realistic application-level performance with GPU acceleration
+   - Includes end-to-end pipeline with output destination
 
-2. **Platform/GPU Performance (`benchmark_gpu_payload.json`)**  
+2. **GPU's Best Performance (`benchmark_gpu_payload.json`)**  
    - Uses GPU device with optimized batch processing
-   - Tests maximum platform throughput capabilities
-   - Hardware-accelerated preprocessing without output overhead
+   - Tests maximum GPU throughput capabilities
+   - Hardware-accelerated preprocessing without output overhead for pure performance testing
 
 ### Steps to run benchmarks
 
-1. Test the sample application performance with CPU inference:
+1. Test the app's best performance with GPU acceleration:
    ```bash
-   ./benchmark_start.sh -p apps/pallet-defect-detection/payload.json -l 1 -u 10 -t 25.0 -i 30
+   ./benchmark_start.sh -p apps/pallet-defect-detection/gpu_payload.json -l 1 -u 10 -t 25.0 -i 30
    ```
 
-2. Test maximum platform performance with GPU optimization:
+2. Test maximum GPU performance for pure throughput:
    ```bash
    ./benchmark_start.sh -p apps/pallet-defect-detection/benchmark_gpu_payload.json -l 1 -u 20 -t 28.5 -i 60
    ```
@@ -90,5 +90,5 @@ throughput cumulative: 173.8
 3. **Debug Mode**
    Add `--trace` to see detailed execution steps:
    ```bash
-   ./benchmark_start.sh -p payload.json -l 1 -u 10 --trace
+   ./benchmark_start.sh -p gpu_payload.json -l 1 -u 10 --trace
    ```
