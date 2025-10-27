@@ -1,6 +1,6 @@
 # Deploy with Helm
 
-This guide provides step-by-step instructions for deploying the Wind Turbine Anomaly Detection sample application using Helm.
+This guide provides step-by-step instructions for deploying the Industrial Edge Insights - Time Series sample application using Helm.
 
 ## Prerequisites
 
@@ -36,7 +36,7 @@ You can either generate or download the Helm charts.
             `cd wind-turbine-anomaly-detection-sample-app`
 
     - To generate the Helm charts:
-    
+
         ```bash
         cd edge-ai-suites/manufacturing-ai-suite/industrial-edge-insights-time-series # path relative to git clone folder
 
@@ -53,11 +53,11 @@ You can either generate or download the Helm charts.
 
         1. Download Helm chart with the following command:
 
-            `helm pull oci://registry-1.docker.io/intel/weld-anomaly-detection-sample-app --version 1.1.0-weekly`
+            `helm pull oci://registry-1.docker.io/intel/weld-anomaly-detection-sample-app --version 1.0.0-weekly`
 
         2. Unzip the package using the following command:
 
-            `tar -xvzf weld-anomaly-detection-sample-app-1.1.0-weekly.tgz`
+            `tar -xvzf weld-anomaly-detection-sample-app-1.0.0-weekly.tgz`
 
         - Get into the Helm directory:
 
@@ -67,7 +67,7 @@ You can either generate or download the Helm charts.
       ```bash
         cd edge-ai-suites/manufacturing-ai-suite/industrial-edge-insights-time-series # path relative to git clone folder
 
-        make gen_helm_charts app=weld-anomaly-detection
+        make gen_helm_charts app=weld-anomaly-detection version=1.0.0-weekly
 
         cd helm/
       ```
@@ -82,13 +82,13 @@ You can either generate or download the Helm charts.
     VISUALIZER_GRAFANA_USER:
     VISUALIZER_GRAFANA_PASSWORD:
     POSTGRES_PASSWORD:
-    MINIO_ACCESS_KEY:  
-    MINIO_SECRET_KEY: 
+    MINIO_ACCESS_KEY:
+    MINIO_SECRET_KEY:
     HTTP_PROXY: # example: http_proxy: http://proxy.example.com:891
     HTTPS_PROXY: # example: http_proxy: http://proxy.example.com:891
     ```
 
-## Step 3: Install Helm charts 
+## Step 3: Install Helm charts
 
 > **Note:**
 > 1. Uninstall the Helm charts if already installed.
@@ -140,7 +140,7 @@ Use the following command to verify if all the application resources got install
 
 To copy your own or existing model into Time Series Analytics Microservice in order to run this sample application in Kubernetes environment:
 
-1. The following udf package is placed in the repository under `edge-ai-suites/manufacturing-ai-suite/industrial-edge-insights-time-series/apps/wind-turbine-anomaly-detection/time-series-analytics-config`. 
+1. The following udf package is placed in the repository under `edge-ai-suites/manufacturing-ai-suite/industrial-edge-insights-time-series/apps/wind-turbine-anomaly-detection/time-series-analytics-config`.
 
     ```
     - time-series-analytics-config/
@@ -156,8 +156,7 @@ To copy your own or existing model into Time Series Analytics Microservice in or
 2. Copy your new UDF package (using the windturbine anomaly detection UDF package as an example) to the `time-series-analytics-microservice` pod:
     ```sh
     export SAMPLE_APP="wind-turbine-anomaly-detection"
-    cd edge-ai-suites/manufacturing-ai-suite/industrial-edge-insights-time-series/apps/wind-turbine-anomaly-detection # path relative to git clone folder
-    cd time-series-analytics-config
+    cd edge-ai-suites/manufacturing-ai-suite/industrial-edge-insights-time-series/apps/wind-turbine-anomaly-detection/time-series-analytics-config # path relative to git clone folder
     mkdir -p $SAMPLE_APP
     cp -r models tick_scripts udfs $SAMPLE_APP/.
 
@@ -170,7 +169,7 @@ To copy your own or existing model into Time Series Analytics Microservice in or
 
 To copy your own or existing model into Time Series Analytics Microservice in order to run this sample application in Kubernetes environment:
 
-1. The following udf package is placed in the repository under `edge-ai-suites/manufacturing-ai-suite/industrial-edge-insights-time-series/apps/weld-anomaly-detection/time-series-analytics-config`. 
+1. The following udf package is placed in the repository under `edge-ai-suites/manufacturing-ai-suite/industrial-edge-insights-time-series/apps/weld-anomaly-detection/time-series-analytics-config`.
 
     ```
     - time-series-analytics-config/
@@ -186,8 +185,7 @@ To copy your own or existing model into Time Series Analytics Microservice in or
 2. Copy your new UDF package (using the windturbine anomaly detection UDF package as an example) to the `time-series-analytics-microservice` pod:
     ```sh
     export SAMPLE_APP="weld-anomaly-detection"
-    cd edge-ai-suites/manufacturing-ai-suite/industrial-edge-insights-time-series/apps/weld-anomaly-detection # path relative to git clone folder
-    cd time-series-analytics-config
+    cd edge-ai-suites/manufacturing-ai-suite/industrial-edge-insights-time-series/apps/weld-anomaly-detection/time-series-analytics-config # path relative to git clone folder
     mkdir -p $SAMPLE_APP
     cp -r models tick_scripts udfs $SAMPLE_APP/.
 
@@ -246,10 +244,6 @@ To configure alerts in Time Series Analytics Microservice, follow the steps [her
 ## Deploy the Application with a Custom UDF
 
 To deploy the application with a custom UDF, follow the steps [here](./how-to-configure-custom-udf.md#helm-deployment).
-
-## Deploy the Application with a Custom UDF by Uploading to the Model Registry
-
-To deploy a custom UDF by uploading it to the Model Registry, follow the steps [here](./how-to-configure-custom-udf.md#with-model-registry).
 
 ## Troubleshooting
 

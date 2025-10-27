@@ -34,9 +34,9 @@ The DL Streamer Pipeline Server utilizes GStreamer pipelines to define the flow 
 
 ##### Object Detection Pipelines (YOLOv11s Series)
 
-Pipelines like `yolov11s_1`, `yolov11s_2`, etc., are used to identify objects in the video frames.
+Pipelines like `yolov11s_1_cpu`, `yolov11s_1_gpu`, `yolov11s_1_npu` etc., are used to identify objects in the video frames.
 
-*   **Pipelines:** `yolov11s_1`, `yolov11s_2`, `yolov11s_3`, `yolov11s_4`
+*   **Pipelines:** `yolov11s_1_cpu`, `yolov11s_1_gpu`, `yolov11s_1_npu`
 *   **How They Work:**
     *   **Video Source:** Uses GStreamer to capture live video.
     *   **Decoding & Detection:** The pipeline decodes the video stream and uses the `gvadetect` element with a YOLO model (located at `/home/pipeline-server/models/public/yolo11s/INT8/yolo11s.xml`) to identify objects.
@@ -51,9 +51,9 @@ Pipelines like `yolov11s_1`, `yolov11s_2`, etc., are used to identify objects in
 
 ##### Object Tracking Pipelines
 
-Pipelines like `object_tracking_1`, `object_tracking_2`, `object_tracking_3`, `object_tracking_4` are designed to track objects detected by the object detection pipelines.
+Pipelines like `object_tracking_cpu`, `object_tracking_gpu`, `object_tracking_npu` are designed to track objects detected by the object detection pipelines.
 
-*   **Pipelines:** `object_tracking_1`, `object_tracking_2`, `object_tracking_3`, `object_tracking_4`
+*   **Pipelines:** `object_tracking_cpu`, `object_tracking_gpu`, `object_tracking_npu`
 *   **How They Work:**
     *   **Detection Model:** Uses the `pedestrian-and-vehicle-detector-adas-0001` model for specialized tracking.
     *   **Tracking Element:** Incorporates `gvatrack` with the setting `tracking-type=short-term-imageless` to follow objects over time.

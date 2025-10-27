@@ -58,7 +58,7 @@
                 },
                 "auto_start": false
             },
-                        {
+            {
                 "name": "object_tracking_benchmarking",
                 "source": "gstreamer",
                 "queue_maxsize": 50,

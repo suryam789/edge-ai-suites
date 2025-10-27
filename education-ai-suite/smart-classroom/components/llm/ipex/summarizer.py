@@ -1,14 +1,20 @@
 from components.llm.base_summarizer import BaseSummarizer
-from ipex_llm.transformers import AutoModelForCausalLM
 import torch
 import threading
 from utils.locks import audio_pipeline_lock
 from utils.config_loader import config
-import logging
-logger = logging.getLogger(__name__)
-
+from utils import ensure_model
 from transformers import TextIteratorStreamer
-
+import logging
+import os
+logger = logging.getLogger(__name__)
+try:
+    from ipex_llm.transformers import AutoModelForCausalLM
+except ImportError as e:
+    if(config.models.summarizer.provider == "ipex"):
+        logger.error("Error importing ipex_llm. Install required dependencies or set summarizer to OpenVINO in config.yaml.")
+        raise e
+    AutoModelForCausalLM = None
 
 class Summarizer(BaseSummarizer):
     def __init__(self, model_name, device="xpu", temperature=0.7):
@@ -50,6 +56,11 @@ class Summarizer(BaseSummarizer):
             logger.info("Loading model in full precision mode.")
             load_in_low_bit = None
 
+        model_dir = ensure_model.get_model_path()
+        local_files_only=False
+        if os.path.exists(model_dir):
+            local_files_only=True
+
         self.model = AutoModelForCausalLM.from_pretrained(
             model_name,
             # load_in_4bit=True,
@@ -57,7 +68,9 @@ class Summarizer(BaseSummarizer):
             optimize_model=True,
             trust_remote_code=True,
             use_cache=use_cache,
-            model_hub=model_hub
+            model_hub=model_hub,
+            cache_dir=model_dir,
+            local_files_only=local_files_only
         )
         self.device = device
         self.model = self.model.to(self.device)

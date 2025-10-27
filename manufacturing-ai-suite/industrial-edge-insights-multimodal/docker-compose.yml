@@ -221,6 +221,7 @@ services:
       TS_MS_PORT: ${KAPACITOR_PORT}
       CONTINUOUS_SIMULATOR_INGESTION: ${CONTINUOUS_SIMULATOR_INGESTION}
       SIMULATION_TARGET_FPS: ${SIMULATION_TARGET_FPS}
+      LOG_LEVEL: ${LOG_LEVEL}
     networks:
     - timeseries_network
 
@@ -273,8 +274,8 @@ services:
       NO_PROXY: "ia-mqtt-broker,ia-influxdb,${no_proxy}"
       # Topic Configuration
       VISION_TOPIC: vision_weld_defect_classification
-      TS_TOPIC: ts_weld_defect_detection
-      FUSION_TOPIC: fusion/anomaly      
+      TS_TOPIC: ts_weld_anomaly_detection
+      FUSION_TOPIC: fusion/anomaly_detection_results
       # Performance Configuration
       BUFFER_SIZE: 100
       TOLERANCE_NS: ${TOLERANCE_NS}
@@ -285,6 +286,7 @@ services:
       INFLUXDB_PASSWORD: ${INFLUXDB_PASSWORD}
       PYTHONUNBUFFERED: 1
       FUSION_MODE: ${FUSION_MODE}
+      LOG_LEVEL: ${LOG_LEVEL}
     depends_on:
       - ia-mqtt-broker
     networks:
@@ -337,7 +339,7 @@ services:
     volumes:
     - vol_pipeline_root:/var/cache/pipeline_root:uid=1999,gid=1999
     - /var/tmp:/var/tmp
-    - ./configs/dlstreamer-pipeline-server/weld-porosity:/home/pipeline-server/resources/weld-porosity
+    - ./configs/dlstreamer-pipeline-server/models:/home/pipeline-server/resources/models
     - ./configs/dlstreamer-pipeline-server/config.json:/home/pipeline-server/config.json
       # Following devices under /dev filesystem will be needed based on usecase
       # dri - GPU
@@ -400,7 +402,7 @@ services:
     - timeseries_network
   
   coturn:
-    image: coturn/coturn:latest
+    image: coturn/coturn:4.7.0
     container_name: coturn
     ports:
       - "${COTURN_UDP_PORT}:3478"

@@ -26,12 +26,24 @@ spec:
           value: "yesoreyeram-infinity-datasource,ryantxu-ajax-panel,grafana-mqtt-datasource"
         - name: GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS
           value: "intel-custom-panel"
+        - name: GF_FEATURE_TOGGLES_ENABLE
+          value: "angularDeprecationUI"
+        - name: GF_ANGULAR_SUPPORT_ENABLED
+          value: "true"
+        - name: GF_PANELS_DISABLE_SANITIZE_HTML
+          value: "true"
         - name: http_proxy
           value: {{ $.Values.env.http_proxy }}
         - name: https_proxy
           value: {{ $.Values.env.https_proxy }}
         - name: no_proxy
           value: "{{ $.Values.env.no_proxy }},{{ $.Values.env.HOST_IP }}"
+        - name: GF_SERVER_ROOT_URL
+          value: http://localhost/grafana/
+        - name: GF_SERVER_SERVE_FROM_SUB_PATH
+          value: "true"
+        - name: GF_SECURITY_ALLOW_EMBEDDING
+          value: "true"
         volumeMounts:
         - name: dashboards-config
           mountPath: /etc/grafana/provisioning/dashboards/main.yml
@@ -39,9 +51,6 @@ spec:
         - name: datasources-config
           mountPath: /etc/grafana/provisioning/datasources/datasources.yml
           subPath: datasources.yml
-        - name: grafana-config
-          mountPath: /etc/grafana/grafana.ini
-          subPath: grafana.ini
         - name: grafana-visualizer
           mountPath: /var/lib/grafana/dashboards/visualizer.json
           subPath: visualizer.json
@@ -64,9 +73,6 @@ spec:
       - name: datasources-config
         configMap:
           name: grafana-datasources
-      - name: grafana-config
-        configMap:
-          name: grafana-config
       - name: grafana-visualizer
         configMap:
           name: grafana-visualizer
@@ -91,13 +97,12 @@ metadata:
   labels:
     app: grafana
 spec:
-  type: NodePort
+  type: ClusterIP
   ports:
   - port: {{ $.Values.config.grafana.int.web_ui_port }}
     targetPort: {{ $.Values.config.grafana.int.web_ui_port }}
     protocol: TCP
     name: http
-    nodePort: {{ $.Values.config.grafana.ext.web_ui_port }}
   selector:
     app: grafana
 ---
@@ -122,20 +127,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: grafana-config
-  namespace: {{ $.Values.namespace }}
-data:
-  grafana.ini: |
-    {{ .Files.Get "config/grafana/grafana.ini" | nindent 4 }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
   name: grafana-visualizer
   namespace: {{ $.Values.namespace }}
 data:
   visualizer.json: |
-    {{ (.Files.Get "config/grafana/dashboards/visualizer.json" | replace "0.0.0.0" .Values.env.HOST_IP | replace "8889" .Values.config.mediamtx.ext.mediamtx_port) | nindent 4 }}
+    {{ (.Files.Get "config/grafana/dashboards/visualizer.json" | replace "0.0.0.0" (.Values.env.HOST_IP | printf "%s:30443")) | nindent 4 }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -144,7 +140,7 @@ metadata:
   namespace: {{ $.Values.namespace }}
 data:
   visualizer_sub_1.json: |
-    {{ (.Files.Get "config/grafana/dashboards/visualizer_sub_1.json" | replace "0.0.0.0" .Values.env.HOST_IP | replace "8889" .Values.config.mediamtx.ext.mediamtx_port) | nindent 4 }}
+    {{ (.Files.Get "config/grafana/dashboards/visualizer_sub_1.json" | replace "0.0.0.0" (.Values.env.HOST_IP | printf "%s:30443")) | nindent 4 }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -153,7 +149,7 @@ metadata:
   namespace: {{ $.Values.namespace }}
 data:
   visualizer_sub_2.json: |
-    {{ (.Files.Get "config/grafana/dashboards/visualizer_sub_2.json" | replace "0.0.0.0" .Values.env.HOST_IP | replace "8889" .Values.config.mediamtx.ext.mediamtx_port) | nindent 4 }}
+    {{ (.Files.Get "config/grafana/dashboards/visualizer_sub_2.json" | replace "0.0.0.0" (.Values.env.HOST_IP | printf "%s:30443")) | nindent 4 }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -162,7 +158,7 @@ metadata:
   namespace: {{ $.Values.namespace }}
 data:
   visualizer_sub_3.json: |
-    {{ (.Files.Get "config/grafana/dashboards/visualizer_sub_3.json" | replace "0.0.0.0" .Values.env.HOST_IP | replace "8889" .Values.config.mediamtx.ext.mediamtx_port) | nindent 4 }}
+    {{ (.Files.Get "config/grafana/dashboards/visualizer_sub_3.json" | replace "0.0.0.0" (.Values.env.HOST_IP | printf "%s:30443")) | nindent 4 }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -171,4 +167,4 @@ metadata:
   namespace: {{ $.Values.namespace }}
 data:
   visualizer_sub_4.json: |
-    {{ (.Files.Get "config/grafana/dashboards/visualizer_sub_4.json" | replace "0.0.0.0" .Values.env.HOST_IP | replace "8889" .Values.config.mediamtx.ext.mediamtx_port) | nindent 4 }}
+    {{ (.Files.Get "config/grafana/dashboards/visualizer_sub_4.json" | replace "0.0.0.0" (.Values.env.HOST_IP | printf "%s:30443")) | nindent 4 }}
