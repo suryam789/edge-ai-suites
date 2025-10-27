@@ -150,8 +150,8 @@ function run_pipelines() {
 
     if echo "$payload_data" | jq -e '.destination' > /dev/null; then
         current_payload=$(echo "$payload_data" | jq \
-            --arg topic "object_detection_$x" \
-            --arg peer_id "object_detection_$x" \
+            --arg topic "${pipeline_name}_$x" \
+            --arg peer_id "${pipeline_name}_$x" \
             '.destination.metadata.topic = $topic |
             .destination.frame."peer-id" = $peer_id
             '
