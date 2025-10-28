@@ -51,18 +51,12 @@ config:
     name: prometheus
     int:
       prometheus_port: "9090"
-    ext:
-      prometheus_port: "30909"
   otel_collector:
     name: otel-collector
     int:
       otlp_grpc_port: "4317"
       otlp_http_port: "4318"
       otlp_prometheus_endpoint_port: "9464"
-    ext:
-      otlp_grpc_port: "30417"
-      otlp_http_port: "30418"
-      otlp_prometheus_endpoint_port: "30464"
   mediamtx:
     name: mediamtx
     int:
