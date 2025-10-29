@@ -249,14 +249,19 @@ function stop_all_pipelines() {
 
 function run_and_analyze_workload() {
     local num_streams=$1
+    local pipeline_name_arg=$2
+    local payload_file=$3
 
     # NOTE: To convert to a full orchestrator, add 'docker compose up' here.
     rm -rf "benchmark-$num_streams" && mkdir -p "benchmark-$num_streams"
 
-    local pipeline_name
-    pipeline_name=$(jq -r '.[0].pipeline' "$payload_file")
     local payload_body
-    payload_body=$(jq '.[0].payload' "$payload_file")
+    payload_body=$(jq -r --arg name "$pipeline_name_arg" '.[] | select(.pipeline == $name) | .payload' "$payload_file")
+
+    if [ -z "$payload_body" ]; then
+        echo "Error: Pipeline '$pipeline_name_arg' not found in $payload_file" >&2
+        return 1
+    fi
 
     # Check and create looped video if needed (only once per payload)
     check_and_loop_video "$payload_body"
@@ -265,7 +270,7 @@ function run_and_analyze_workload() {
       return 1
     fi
 
-    run_pipelines "$num_streams" "$payload_body" "$pipeline_name"
+    run_pipelines "$num_streams" "$payload_body" "$pipeline_name_arg"
     if [ $? -ne 0 ]; then
       echo "Failed to start pipelines. Aborting." >&2
       return 1
@@ -324,12 +329,14 @@ function run_and_analyze_workload() {
 
 run_workload_with_retries () {
   local num_streams=$1
+  local pipeline_name_arg=$2
+  local payload_file=$3
   local throughput=0
   local throughput_max=0
   local retry_ct=0
   while [ $retry_ct -lt ${RETRY_TIMES:-1} ]; do
     echo "Invoking workload with $num_streams streams...try#$retry_ct" >&2
-    if run_and_analyze_workload "$num_streams" >/dev/null 2>&1; then
+    if run_and_analyze_workload "$num_streams" "$pipeline_name_arg" "$payload_file" >/dev/null 2>&1; then
       sed "s|^|stream-density#$num_streams: |" "benchmark-$num_streams/kpi.txt" >&2
       throughput=$(grep -m1 -F 'throughput min:' "benchmark-$num_streams/kpi.txt" | cut -f2 -d: | tr -d ' ')
       if echo "${throughput:-0} $target_fps" | gawk '{exit($1>=$2?0:1)}'; then
@@ -354,10 +361,10 @@ run_workload_with_retries () {
 # --- Main Script ---
 
 function usage() {
-    echo "Usage: $0 -p <payload_file> -l <lower_bound> -u <upper_bound> [-t <target_fps>] [-i <interval>] [-c <throughput_percentile>]"
+    echo "Usage: $0 -p <pipeline_name> -l <lower_bound> -u <upper_bound> [-t <target_fps>] [-i <interval>] [-c <throughput_percentile>]"
     echo
     echo "Arguments:"
-    echo "  -p <payload_file>    : (Required) Path to the benchmark payload JSON file."
+    echo "  -p <pipeline_name>   : (Required) The name of the pipeline to benchmark (e.g., object_tracking_cpu)."
     echo "  -l <lower_bound>     : (Required) The starting lower bound for the number of streams."
     echo "  -u <upper_bound>     : (Required) The starting upper bound for the number of streams."
     echo "  -t <target_fps>      : Target FPS for stream-density mode (default: 14.95)."
@@ -366,7 +373,7 @@ function usage() {
     exit 1
 }
 
-payload_file=""
+pipeline_name_arg=""
 target_fps="14.95"
 MAX_DURATION=60
 THROUGHPUT_PERCENTILE="0.9"
@@ -375,7 +382,7 @@ upper_bound=""
 
 while getopts "p:l:u:t:i:c:" opt; do
   case ${opt} in
-    p ) payload_file=$OPTARG ;;
+    p ) pipeline_name_arg=$OPTARG ;;
     l ) lower_bound=$OPTARG ;;
     u ) upper_bound=$OPTARG ;;
     t ) target_fps=$OPTARG ;;
@@ -385,10 +392,30 @@ while getopts "p:l:u:t:i:c:" opt; do
   esac
 done
 
-if [ -z "$payload_file" ] || [ -z "$lower_bound" ] || [ -z "$upper_bound" ]; then
-    echo "Error: Payload file, lower bound, and upper bound are required." >&2
+if [ -z "$pipeline_name_arg" ] || [ -z "$lower_bound" ] || [ -z "$upper_bound" ]; then
+    echo "Error: Pipeline name, lower bound, and upper bound are required." >&2
     usage
 fi
+
+# Path to the .env file
+ENV_FILE="./.env"
+
+# Check if .env file exists
+if [ ! -f "$ENV_FILE" ]; then
+    echo "Error: .env file not found."
+    exit 1
+fi
+
+# Extract SAMPLE_APP variable from .env file
+SAMPLE_APP=$(grep -E "^SAMPLE_APP=" "$ENV_FILE" | cut -d '=' -f2 | tr -d '"' | tr -d "'")
+
+# Check if SAMPLE_APP variable exists
+if [ -z "$SAMPLE_APP" ]; then
+    echo "Error: SAMPLE_APP variable not found in .env file." >&2
+    exit 1
+fi
+
+payload_file="./${SAMPLE_APP}/benchmark_app_payload.json"
 
 if [ ! -f "$payload_file" ]; then
     echo "Error: Benchmark payload file not found: $payload_file" >&2
@@ -419,7 +446,7 @@ while [ $((uns - lns)) -gt 1 ] || [[ "$records" != *" $lns:"* ]] || [[ "$records
     throughput=${records##* $ns:}
     throughput=${throughput%% *}
   else
-    throughput=$(run_workload_with_retries $ns)
+    throughput=$(run_workload_with_retries "$ns" "$pipeline_name_arg" "$payload_file")
   fi
   records="$records $ns:$throughput"
 
@@ -438,7 +465,7 @@ tns=$lns
 
 if [[ "$@" = *"--trace"* && $lns -lt $uns ]]; then
   echo "Start-Trace:"
-  throughput=$(run_workload_with_retries $tns)
+  throughput=$(run_workload_with_retries "$tns" "$pipeline_name_arg" "$payload_file")
 fi
 echo "Stop-Trace:"
 
