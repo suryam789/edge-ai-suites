@@ -36,15 +36,7 @@
             "parameters": {
                 "detection-properties": {
                     "model": "/home/pipeline-server/resources/models/worker-safety-gear-detection/deployment/Detection/model/model.xml",
-                    "device": "GPU",
-                    "batch-size": 8,
-                    "model-instance-id": "instgpu0",
-                    "inference-interval": 1,
-                    "inference-region": 0,
-                    "nireq": 2,
-                    "ie-config": "NUM_STREAMS=2",
-                    "pre-process-backend": "va-surface-sharing",
-                    "threshold": 0.7
+                    "device": "GPU"
                 }
             }
         }
