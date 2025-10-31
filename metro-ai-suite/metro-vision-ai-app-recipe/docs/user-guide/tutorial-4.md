@@ -34,7 +34,7 @@ By following this guide, you will learn how to:
 
 The AI Crowd Analytics system consists of several key components:
 - **Video Input**: Processes live camera feeds or video files from parking lot cameras
-- **Vehicle Detection**: Uses YOLOv10s model to detect and track vehicles in the parking lot
+- **Vehicle Detection**: Uses YOLO11s model to detect and track vehicles in the parking lot
 - **Vehicle Tracking**: Maintains consistent vehicle identification across video frames
 - **Crowd Detection Algorithm**: Analyzes vehicle positions using Euclidean distance calculations in Node-RED to identify clusters
 - **Data Processing**: Determines whether detected vehicles form a "crowd" (closely grouped) or are scattered individually
@@ -134,7 +134,7 @@ cat > ./crowd-analytics/src/dlstreamer-pipeline-server/config.json << 'EOF'
                 "name": "yolov11s_crowd_analytics",
                 "source": "gstreamer",
                 "queue_maxsize": 50,
-                "pipeline": "{auto_source} name=source ! decodebin ! gvadetect model=/home/pipeline-server/models/public/yolo11s/FP16/yolo11s.xml device=CPU pre-process-backend=opencv name=detection ! queue ! gvatrack tracking-type=short-term-imageless ! queue ! gvametaconvert add-empty-results=true name=metaconvert ! queue ! gvafpscounter ! appsink name=destination",
+                "pipeline": "{auto_source} name=source ! decodebin ! gvaattachroi roi=1000,550,1800,800 ! gvadetect model=/home/pipeline-server/models/public/yolo11s/FP16/yolo11s.xml device=CPU pre-process-backend=opencv name=detection inference-region=1 ! queue ! gvatrack tracking-type=short-term-imageless ! queue ! gvametaconvert add-empty-results=true name=metaconvert ! gvametapublish file-format=2 file-path=/tmp/easy1_test1.jsonl ! queue ! gvafpscounter ! appsink name=destination",
                 "description": "Vehicle detection and tracking for crowd analytics",
                 "parameters": {
                     "type": "object",
@@ -195,8 +195,6 @@ cd ../../../../
 grep SAMPLE_APP= .env
 grep HOST_IP= .env
 ```
-
-Expected output: `SAMPLE_APP=crowd-analytics`
 
 ### 6. **Deploy the Application**
 
@@ -277,19 +275,12 @@ Access the processed video stream with AI annotations through WebRTC:
 ```bash
 # Open in your web browser (replace <HOST_IP> with your actual IP address)
 # For local testing, typically use localhost or 127.0.0.1
-http://<HOST_IP>/mediamtx/object_detection_1/
+https://<HOST_IP>/mediamtx/object_detection_1/
 ```
 
-For local testing, you can use: `http://localhost/mediamtx/object_detection_1/`
+For local testing, you can use: `https://localhost/mediamtx/object_detection_1/`
 
-![Crowd Analytics Live Detection](_images/crowd_analytics_detection.jpg)
-
-Expected results:
-- Vehicle detection accuracy > 90% in parking lot scenarios
-- Real-time vehicle tracking with consistent IDs across frames
-- Crowd detection analysis showing grouped vs scattered vehicles
-- Live video stream with bounding boxes and crowd indicators
-- Processing at 15-30 FPS depending on hardware capabilities
+![Crowd Analytics Live Detection](_images/crowd_analytics_detection.png)
 
 ## Troubleshooting
 
@@ -306,21 +297,7 @@ docker logs <container_name>
 # - Resource constraints: Check available memory and disk space
 ```
 
-### 2. **Model Download Failures**
-
-If model download fails during installation:
-```bash
-# Retry the installation with verbose output
-./install.sh 2>&1 | tee install.log
-
-# Check for network connectivity issues
-curl -I https://github.com/openvinotoolkit/open_model_zoo
-
-# Verify disk space
-df -h
-```
-
-### 3. **Pipeline Processing Errors**
+### 2. **Pipeline Processing Errors**
 
 If video processing fails or shows poor accuracy:
 ```bash
@@ -334,7 +311,7 @@ ls -la ./crowd-analytics/src/dlstreamer-pipeline-server/models/
 # Replace the video file with a different sample
 ```
 
-### 4. **Performance Issues**
+### 3. **Performance Issues**
 
 For slow processing or high CPU usage:
 - **Reduce video resolution**: Use lower resolution input videos
@@ -984,7 +961,11 @@ Create debug nodes to monitor the hotspot analytics pipeline:
    - Set each debug node to output `msg.payload`
    - Enable console output for troubleshooting
 
-### 10. **Deploy and Validate the Crowd Analytics Flow**
+### 10. **Expected Node-RED Flow**
+
+![Crowd Analytics Node-RED Flow](_images/crowd-analytics-node-red-flow.png)
+
+### 11. **Deploy and Validate the Crowd Analytics Flow**
 
 Test your complete crowd analytics Node-RED flow:
 
@@ -994,29 +975,17 @@ Test your complete crowd analytics Node-RED flow:
 2. **Monitor Crowd Analytics**:
    - Open the debug panel in Node-RED
    - Start the crowd analytics pipeline using the curl command from step 4
-   - Verify that vehicle detection data flows through each stagAfter successfully implementing vehicle crowd detection with Node-RED, follow the following steps to set up Grafana dashboards for visualizing the parked vehicle hotspot data and analytics. This will allow you to monitor stationary vehicle clusters and parking hotspot formations in real-time, providing valuable insights for parking space management. identified
-   - VCrowd alert generation for diffecrowdngestion scenarios
+   - Verify that vehicle detection data flows through each stage
+   - Vehicle crowd alert generation for different congestion scenarios
    - Review hotspot length calculations in the output
 
-## Expected Results
-
-![Crowd Analytics Node-RED Flow](_images/crowd-analytics-node-red-flow.png)
-
-After completing this tutorial, you should have:
-
-1. **Complete Hotspot Analytics Flow**: A working Node-RED flow that tracks parked vehicles and detects hotspot formations
-2. **Parked Vehicle Detection**: Automatic identification of stationary (parked) vehicles by tracking position across frames
-3. **Real-time Hotspot Det  # aheck if Node-RED container is running
-  docker ps | grep node-red
-  # Restart the metro vision AI application if needed
-  ./sample_stop.sh && ./sample_start.sh
-  ```
+## Troubleshooting
 
 ### **No Data in Debug Panel**
 - **Problem**: Debug nodes show no incoming data
 - **Solution**: 
   - Verify the AI application is running and generating inference data
-  - Cbeck MQTT topic names match your application's output topics
+  - Check MQTT topic names match your application's output topics
   - Ensure proper JSON parsing in function nodes
 
 ### **Function Node Errors**
@@ -1028,7 +997,7 @@ After completing this tutorial, you should have:
 
 -----------------------------
 
-After successfully implementing hotspot analytics with Node-RED, follow the follwing steps tocset up Grafana dashboards for visualizing the hotspot data and metrics. This will allow you to monitor vehicle congestion and hotspot formations in real-time, providing valuable insights for traffic management and urban planning.
+After successfully implementing hotspot analytics with Node-RED, follow the next steps to set up Grafana dashboards for visualizing the hotspot data and metrics. This will allow you to monitor vehicle congestion and hotspot formations in real-time.
 
 ### Visualizing Hotspot Analytics in Grafana
 
@@ -1114,6 +1083,32 @@ The hotspot analytics data published to `hotspot_analytics` can be visualized in
    - Click the save icon at the top of the dashboard
    - Name your dashboard "Vehicle Crowd Analytics Dashboard"
 
+6. **Run the pipeline** (if not already running):
+   - Use the curl command to start the crowd analytics pipeline to see the expected results:
+   
+   ```bash
+   curl -k -s https://localhost/api/pipelines/user_defined_pipelines/yolov11s_crowd_analytics -X POST -H 'Content-Type: application/json' -d '
+   {
+       "source": {
+           "uri": "file:///home/pipeline-server/videos/easy1.mp4",
+           "type": "uri"
+       },
+       "destination": {
+           "metadata": {
+               "type": "mqtt",
+               "topic": "object_detection_1",
+               "timeout": 1000
+           },
+           "frame": {
+               "type": "webrtc",
+               "peer-id": "object_detection_1"
+           }
+       },
+       "parameters": {
+           "detection-device": "CPU"
+       }
+   }'
+   ```
 ## Expected Results
 
 ![Crowd Analytics Grafana](_images/crowd-analytics-grafana.png)
