@@ -14,7 +14,6 @@ on:
   workflow_dispatch:
 
 jobs:
-
   check-changes:
     permissions:
       contents: read
@@ -38,20 +37,6 @@ jobs:
               - 'robotics-ai-suite/pipelines/**'
             rvc-location:
               - 'robotics-ai-suite/robot-vision-control/**'
-
-  build_hmi-augmented-worker:
-    permissions:
-      contents: read          # needed for actions/checkout
-    needs: filter
-    if: ${{ needs.filter.outputs.hmi-augmented-worker_changed == 'true' }}
-    uses: open-edge-platform/orch-ci/.github/workflows/build-documentation.yml@b14b0105bf312a2c98457dd021622de4c14f6bff
-    secrets:
-      SYS_ORCH_GITHUB: ${{ secrets.SYS_ORCH_GITHUB }}
-      DOC_AWS_ACCESS_KEY_ID: ${{ secrets.DOC_AWS_ACCESS_KEY_ID }}
-      DOC_AWS_SECRET_ACCESS_KEY: ${{ secrets.DOC_AWS_SECRET_ACCESS_KEY }}
-    with:
-      docs_directory: manufacturing-ai-suite/hmi-augmented-worker
-      exclude_patterns: "**user-guide/overview.md"
 
   build-components:
     needs: check-changes
