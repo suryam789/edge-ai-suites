@@ -1,0 +1,69 @@
+# Copyright (C) 2025 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: "[Robotics] Pre-merge workflow"
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/robotics*'
+      - 'robotics-ai-suite/**'
+      - '!robotics-ai-suite/**/docs/**'
+
+  workflow_dispatch:
+
+jobs:
+
+  check-changes:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    outputs:
+      components-changed: ${{ steps.filter.outputs.components-location }}
+      pipelines-changed: ${{ steps.filter.outputs.pipelines-location }}
+      rvc-changed: ${{ steps.filter.outputs.rvc-location }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Configure paths to look for changes
+        id: filter
+        uses: dorny/paths-filter@4512585405083f25c027a35db413c2b3b9006d50
+        with:
+          filters: |
+            components-location:
+              - 'robotics-ai-suite/components/**'
+            pipelines-location:
+              - 'robotics-ai-suite/pipelines/**'
+            rvc-location:
+              - 'robotics-ai-suite/robot-vision-control/**'
+
+  build_hmi-augmented-worker:
+    permissions:
+      contents: read          # needed for actions/checkout
+    needs: filter
+    if: ${{ needs.filter.outputs.hmi-augmented-worker_changed == 'true' }}
+    uses: open-edge-platform/orch-ci/.github/workflows/build-documentation.yml@b14b0105bf312a2c98457dd021622de4c14f6bff
+    secrets:
+      SYS_ORCH_GITHUB: ${{ secrets.SYS_ORCH_GITHUB }}
+      DOC_AWS_ACCESS_KEY_ID: ${{ secrets.DOC_AWS_ACCESS_KEY_ID }}
+      DOC_AWS_SECRET_ACCESS_KEY: ${{ secrets.DOC_AWS_SECRET_ACCESS_KEY }}
+    with:
+      docs_directory: manufacturing-ai-suite/hmi-augmented-worker
+      exclude_patterns: "**user-guide/overview.md"
+
+  build-components:
+    needs: check-changes
+    if: ${{ needs.check-changes.outputs.components-changed == 'true' }}
+    uses: "./.github/workflows/robotics-components.yaml@pperycz-robotics-build-fast-mapping"
+
+  # build-pipelines:
+  #   needs: check-changes
+  #   if: ${{ needs.check-changes.outputs.pipelines-changed == 'true' }}
+  #   uses: "./.github/workflows/robotics-pipelines.yaml@pperycz-robotics-build-fast-mapping"
+
+  # build-rvc:
+  #   needs: check-changes
+  #   if: ${{ needs.check-changes.outputs.rvc-changed == 'true' }}
+  #   uses: "./.github/workflows/robotics-rvc.yaml@pperycz-robotics-build-fast-mapping"

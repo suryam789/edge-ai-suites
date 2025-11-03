@@ -1,0 +1,14 @@
+# Copyright (C) 2025 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+on:
+  workflow_call:
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print input path
+        run: |
+          echo "Called robotics-components workflow"
