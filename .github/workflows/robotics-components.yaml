@@ -41,5 +41,5 @@ jobs:
   build-its-planner:
     name: "Build (ITS Planner)"
     needs: check-changes
-    if: ${{ needs.check-changes.outputs.fast-mapping-changed == 'true' }}
+    if: ${{ needs.check-changes.outputs.its-planner-changed == 'true' }}
     uses: "./.github/workflows/robotics-components-its-planner.yaml"
