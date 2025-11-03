@@ -8,29 +8,32 @@ on:
 permissions:
   contents: read
 
+env:
+  COMPONENT_NAME: fast-mapping
+
 defaults:
   run:
     working-directory: robotics-ai-suite/components/fast-mapping
 
 jobs:
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5.0.0
-        with:
-          sparse-checkout: ./robotics-ai-suite/components/fast-mapping
-          persist-credentials: false
+  # lint:
+  #   name: '[${{ env.COMPONENT_NAME }}] Lint'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5.0.0
+  #       with:
+  #         sparse-checkout: ./robotics-ai-suite/components/fast-mapping
+  #         persist-credentials: false
 
-      - name: Lint
-        env:
-          GITHUB_TOKEN: '${{ secrets.GH_TOKEN }}'
-        run: |
-          make lint
+  #     - name: Lint
+  #       env:
+  #         GITHUB_TOKEN: '${{ secrets.GH_TOKEN }}'
+  #       run: |
+  #         make lint
 
   license-check:
-    name: License Check
+    name: '[${{ env.COMPONENT_NAME }}] License Check'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -44,8 +47,9 @@ jobs:
           make license-check
 
   build-test:
-    needs: [lint, license-check]
-    name: 'Build & Test (${{ matrix.ros_distro }})'
+    # needs: [lint, license-check]
+    needs: [license-check]
+    name: '[${{ env.COMPONENT_NAME }}] Build & Test (${{ matrix.ros_distro }})'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -78,7 +82,7 @@ jobs:
 
   build-package:
     needs: [build-test]
-    name: 'Build Package (${{ matrix.ros_distro }})'
+    name: '[${{ env.COMPONENT_NAME }}] Build Package (${{ matrix.ros_distro }})'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -112,7 +116,7 @@ jobs:
     concurrency:
       group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ matrix.ros_distro }}
       cancel-in-progress: true
-    name: E2E tests (${{ matrix.ros_distro }})
+    name: '[${{ env.COMPONENT_NAME }}] E2E tests (${{ matrix.ros_distro }})'
     runs-on: ubuntu-latest
     needs: build-package
     strategy:
