@@ -75,18 +75,6 @@ jobs:
         run: |
           ROS_DISTRO=${{ matrix.ros_distro }} make test
 
-      # - name: Debug info (artifacts)
-      #   shell: bash
-      #   run: |
-      #     find . -type d -name Testing
-      #     find . -type d -name test_results
-
-      # - name: Debug info (artifacts)
-      #   shell: bash
-      #   run: |
-      #     find . -wholename "**/Testing/*"
-      #     find . -wholename "**/test_results/*"
-
       - name: Upload test results
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4  # v5.0.0
         with:
@@ -115,11 +103,6 @@ jobs:
         shell: bash
         run: |
           ROS_DISTRO=${{ matrix.ros_distro }} make package
-
-      # - name: Debug info (artifacts)
-      #   shell: bash
-      #   run: |
-      #     find . -type f -name "*.deb"
 
       - name: Collect build artifacts
         shell: bash
@@ -176,7 +159,7 @@ jobs:
 
       - name: Place *.deb in the working folder
         run: |
-          mv **/*.deb ./
+          mv output/fast-mapping/*.deb .
 
       - name: Debug info (artifacts)
         shell: bash
