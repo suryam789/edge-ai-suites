@@ -33,8 +33,7 @@ jobs:
           persist-credentials: false
 
       - name: Lint
-        env:
-          GITHUB_TOKEN: '${{ secrets.GH_TOKEN }}'
+        shell: bash
         run: |
           make lint
 
@@ -49,6 +48,7 @@ jobs:
           persist-credentials: false
 
       - name: Run REUSE
+        shell: bash
         run: |
           make license-check
 
@@ -150,8 +150,10 @@ jobs:
           path: ./
 
       - name: Place *.deb in the working folder
+        shell: bash
         run: |
           mv output/fast-mapping/*.deb .
 
       - name: Run E2E tests
+        shell: bash
         run: ROS_DISTRO=${{ matrix.ros_distro }} make test-e2e
