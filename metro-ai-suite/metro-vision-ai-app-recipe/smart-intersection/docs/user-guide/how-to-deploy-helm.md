@@ -91,7 +91,6 @@ Now you're ready to deploy the Smart Intersection application with nginx reverse
 # Install the chart (works on both single-node and multi-node clusters)
 helm upgrade --install smart-intersection ./smart-intersection/chart \
   --create-namespace \
-  --set grafana.service.type=NodePort \
   --set global.storageClassName="" \
   -n smart-intersection
 
