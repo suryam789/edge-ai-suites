@@ -1,13 +1,13 @@
 namespace:
 replicaCount: 1
-http_proxy: http://proxy-chain.intel.com:912
-https_proxy: http://proxy-chain.intel.com:912
-no_proxy: localhost,127.0.0.1,.local,.cluster.local
+http_proxy: 
+https_proxy: 
+no_proxy: 
 
 # Global configuration
 global:
   # External IP address for certificate generation
-  externalIP: "10.223.22.154"
+  externalIP: 
 
 # Global image pull policy for all containers
 imagePullPolicy: IfNotPresent
