@@ -26,7 +26,7 @@ os.environ.setdefault('CONFIDENCE_THRESHOLD', '0.4')
 
 # Import the encoder module directly to avoid loading the server module
 import importlib.util
-encoder_spec = importlib.util.spec_from_file_location("encoder", src_path / "feature_matching" / "encoder.py")
+encoder_spec = importlib.util.spec_from_file_location("encoder", src_path / "feature-matching" / "encoder.py")
 encoder = importlib.util.module_from_spec(encoder_spec)
 encoder_spec.loader.exec_module(encoder)
 

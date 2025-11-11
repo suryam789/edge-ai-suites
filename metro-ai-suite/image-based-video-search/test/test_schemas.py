@@ -23,7 +23,7 @@ os.environ.setdefault('CONFIDENCE_THRESHOLD', '0.4')
 
 # Import the schemas module directly to avoid loading the server module
 import importlib.util
-schemas_spec = importlib.util.spec_from_file_location("schemas", src_path / "feature_matching" / "schemas.py")
+schemas_spec = importlib.util.spec_from_file_location("schemas", src_path / "feature-matching" / "schemas.py")
 schemas = importlib.util.module_from_spec(schemas_spec)
 schemas_spec.loader.exec_module(schemas)
 
