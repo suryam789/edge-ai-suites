@@ -4,11 +4,6 @@ kind: PersistentVolume
 metadata:
   name: {{ .Release.Name }}-pgserver-db
   namespace: {{ .Release.Namespace }}
-  labels:
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-    meta.helm.sh/release-name: smart-intersection
-    meta.helm.sh/release-namespace: smart-intersection
 spec:
   capacity:
     storage: 2Gi
@@ -24,11 +19,6 @@ kind: PersistentVolume
 metadata:
   name: {{ .Release.Name }}-pgserver-migrations
   namespace: {{ .Release.Namespace }}
-  labels:
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-    meta.helm.sh/release-name: smart-intersection
-    meta.helm.sh/release-namespace: smart-intersection
 spec:
   capacity:
     storage: 1Gi
@@ -44,11 +34,6 @@ kind: PersistentVolume
 metadata:
   name: {{ .Release.Name }}-pgserver-media
   namespace: {{ .Release.Namespace }}
-  labels:
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-    meta.helm.sh/release-name: smart-intersection
-    meta.helm.sh/release-namespace: smart-intersection
 spec:
   capacity:
     storage: 1Gi

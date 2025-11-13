@@ -74,7 +74,7 @@ python3 -c 'import secrets; print("\x27" + "".join([secrets.choice("abcdefghijkl
     for i in range(50)]) + "\x27")' >> $SECRETSDIR/django/secrets.py
 echo "DATABASE_PASSWORD='$DBPASS'" >> $SECRETSDIR/django/secrets.py
 mkdir -p $SECRETSDIR/pgserver
-echo "POSTGRES_PASSWORD=$DBPASS" > $SECRETSDIR/pgserver/pgserver.env
+echo "POSTGRES_PASSWORD=\"$DBPASS\"" > $SECRETSDIR/pgserver/pgserver.env
 
 # Generate auth files
 echo Generating auth files
