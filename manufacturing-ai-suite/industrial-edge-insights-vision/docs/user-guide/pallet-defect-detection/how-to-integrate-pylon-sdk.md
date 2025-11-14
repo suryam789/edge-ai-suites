@@ -236,5 +236,5 @@ Replace `<HOST_IP>` with the IP address configured in your `.env` file.
 ## Troubleshooting
 
 - For initial configuration and advanced configuration of the Basler camera, please use the company-provided visualization tool **pylonviewer**, which is part of the **pylon SDK**.
-- Instructions to install the **pylon SDK** on the host can be found in the [pylon SDK Installation Guide](../../how-to-install-pylon-sdk-on-host.md).
+- Instructions to install the **pylon SDK** on the host can be found in the [Pylon SDK Installation Guide](../../how-to-install-pylon-sdk-on-host.md).
 - If you face any issues related to camera detection over USB, please refer to the [Pylon Troubleshooting Guide](../../how-to-install-pylon-sdk-on-host.md#troubleshooting).
