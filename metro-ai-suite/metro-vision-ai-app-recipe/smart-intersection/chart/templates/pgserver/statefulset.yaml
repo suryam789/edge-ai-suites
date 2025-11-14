@@ -28,33 +28,27 @@ spec:
         - name: no_proxy
           value: "{{ .Values.no_proxy }},influxdb2, ntpserv,smart-intersection-broker,smart-intersection-dlstreamer-pipeline-server,smart-intersection-grafana,smart-intersection-nodered,smart-intersection-pgserver,smart-intersection-scene,smart-intersection-web"
         - name: POSTGRES_USER
-              value: "scenescape"
+          value: "scenescape"
         - name: POSTGRES_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ .Release.Name }}-db
+              name: {{ .Release.Name }}-dbpass
               key: DATABASE_PASSWORD
         - name: POSTGRES_DB
           value: "scenescape"
         volumeMounts:
         - name: pgserver-db
           mountPath: /workspace/db
-        - name: pgserver-migrations
-          mountPath: /workspace/migrations
         - name: pgserver-media
           mountPath: /workspace/media
-        - name: pgserver-config
-          mountPath: /tmp
-        - name: secrets
-          mountPath: /tmp/secrets  # Mount secrets in /tmp/secrets
         - name: smart-intersection-ri-data
           mountPath: /data
         securityContext:
           allowPrivilegeEscalation: false
       volumes:
       - name: dev-fuse
-          hostPath:
-            path: /dev/fuse
+        hostPath:
+          path: /dev/fuse
       - name: pgserver-media
         persistentVolumeClaim:
           claimName: {{ .Release.Name }}-pgserver-media

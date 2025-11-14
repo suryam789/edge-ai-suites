@@ -4,7 +4,9 @@ http_proxy:
 https_proxy:
 no_proxy:
 supass:
-dbpass:
+pgpass:
+
+kubernetesAPIEndpoint: https://kubernetes.default.svc.cluster.local
 
 # Global configuration
 global:

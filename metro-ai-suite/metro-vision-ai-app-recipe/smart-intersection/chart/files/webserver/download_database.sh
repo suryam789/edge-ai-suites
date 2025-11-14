@@ -1,7 +1,5 @@
-{{/*
-Template for Web server startup script
-*/}}
-{{- define "web.startup-script" -}}
+#!/bin/bash
+
 if [ -f /data/smart-intersection-ri.tar.bz2 ]; then
   echo "File exists: /data/smart-intersection-ri.tar.bz2"
 else
@@ -16,5 +14,3 @@ else
     exit 1
   fi
 fi
-{{- end -}}
-

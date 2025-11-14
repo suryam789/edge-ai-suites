@@ -17,14 +17,15 @@ spec:
       annotations:
         checksum/secrets: {{ include (print $.Template.BasePath "/app-secrets.yaml") . | sha256sum }}
     spec:
+      {{- if .Values.externalUrls.githubRepo }}
       initContainers:
       - name: download-example-db
-        image: {{ .Values.images.busybox.repository }}:{{ .Values.images.busybox.tag }}
+        image: {{ .Values.images.alpine.repository }}:{{ .Values.images.alpine.tag }}
         imagePullPolicy: IfNotPresent
-        command: ["/bin/bash" ,"-c"]
+        command: ["/bin/sh" ,"-c"]
         args:
         - |
-          {{ include "web.startup-script" . | indent 10 }}
+          {{ tpl (.Files.Get "files/webserver/download_database.sh") . | nindent 10 }}
         env:
         - name: http_proxy
           value: {{ .Values.http_proxy | quote }}
@@ -35,6 +36,7 @@ spec:
         volumeMounts:
         - name: {{ .Release.Name }}-example-db
           mountPath: /data
+      {{- end }}
       containers:
       - name: web
         image: {{ .Values.web.image.repository }}:{{ .Values.web.image.tag }}
@@ -49,14 +51,14 @@ spec:
         - name: DBROOT
           value: /workspace
         - name: MODEL_CONFIGS_FOLDER
-            value: /home/scenescape/SceneScape/models/models/model_configs
+          value: /home/scenescape/SceneScape/models/models/model_configs
         - name: SUPASS
           valueFrom:
             secretKeyRef:
               name: {{ .Release.Name }}-supass-secret
               key: supass
         - name: EXAMPLEDB
-            value: /home/scenescape/SceneScape/example_db/smart-intersection-ri.tar.bz2
+          value: /home/scenescape/SceneScape/example_db/smart-intersection-ri.tar.bz2
         volumeMounts:
         - name: pgserver-media
           mountPath: /workspace/media
@@ -74,20 +76,10 @@ spec:
             add:
               - SYS_ADMIN
           privileged: true
+        command: ["/bin/bash", "-e", "-c"]
         args:
-        - webserver
-        - --dbhost
-        - pgserver.{{ .Release.Namespace }}.svc.cluster.local
-        - --dbtype
-        - postgres
-        - --dbport
-        - "5432"
-        - --broker
-        - broker.{{ .Release.Namespace }}.svc.cluster.local
-        - --brokerauth
-        - /run/secrets/browser.auth
-        - --brokerrootcert
-        - /run/secrets/certs/scenescape-ca.pem
+        - >
+          {{- tpl (include "web.startup-script" .) . | nindent 10 }}
       volumes:
       - name: pgserver-media
         persistentVolumeClaim:
