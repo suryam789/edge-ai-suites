@@ -17,21 +17,6 @@ spec:
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: {{ .Release.Name }}-pgserver-migrations
-  namespace: {{ .Release.Namespace }}
-spec:
-  capacity:
-    storage: 1Gi
-  accessModes:
-    - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Delete
-  hostPath:
-    path: /mnt/data/smart-intersection-pgserver-migrations
-
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
   name: {{ .Release.Name }}-pgserver-media
   namespace: {{ .Release.Namespace }}
 spec:

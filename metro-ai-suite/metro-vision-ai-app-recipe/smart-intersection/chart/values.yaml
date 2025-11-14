@@ -3,6 +3,8 @@ replicaCount: 1
 http_proxy:
 https_proxy:
 no_proxy:
+supass:
+dbpass:
 
 # Global configuration
 global:
