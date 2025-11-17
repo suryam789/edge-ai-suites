@@ -1,3 +1,9 @@
+<!--
+Copyright (C) 2025 Intel Corporation
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Multi-Camera Demo
 
 In this demo four instances of AI applications for object detection are run in parallel using four RealSense™ camera stream. In this demo, the Ultralytics YOLOv8 model and mobilenet-ssd model are downloaded and used for object detection and segmentation.
