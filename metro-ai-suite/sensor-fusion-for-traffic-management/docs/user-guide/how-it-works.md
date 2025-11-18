@@ -15,7 +15,7 @@ Each pipeline is deployed on a single Intel® SoC processor, providing the neces
 ![Case-C+L](./_images/Case-C+L.png)
 <center>Use case: C+L Pipeline</center>
 
-Following are the four demo configurations. Please refer to the [Get Started Guide](./Get-Started-Guide.md) for more instructions on deploying services on bare metal.
+Following are the four demo configurations. Please refer to the [Get Started Guide](./get-started-guide.md) for more instructions on deploying services on bare metal.
 
 ## Demo for 2C+1L
 
@@ -38,11 +38,8 @@ Following are the four demo configurations. Please refer to the [Get Started Gui
 
 <center>Use case #4: 8C+4L running on Intel® Core™ i7-13700 and Intel® B580 Graphics </center>
 
+## Demo for 12C+4L
 
+![Demo-12C4L](./_images/Demo-12C4L.png)
 
-
-
-
-
-
-
+<center>Use case #5: 12C+4L running on Intel® Core™ i7-13700 and Intel® B580 Graphics </center>
