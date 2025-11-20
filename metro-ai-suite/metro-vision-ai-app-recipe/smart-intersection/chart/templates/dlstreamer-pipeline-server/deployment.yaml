@@ -16,6 +16,9 @@ spec:
     spec:
       securityContext:
         supplementalGroups: [109,110,992]
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       volumes:
       - name: dev
         hostPath:

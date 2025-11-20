@@ -17,6 +17,10 @@ spec:
       annotations:
         checksum/secrets: {{ include (print $.Template.BasePath "/app-secrets.yaml") . | sha256sum }}
     spec:
+      securityContext:
+        fsGroup: 472
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: grafana
           image: "{{ .Values.grafana.repository }}:{{ .Values.grafana.tag }}"

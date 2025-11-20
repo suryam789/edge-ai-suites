@@ -14,8 +14,12 @@ spec:
       labels:
         app: {{ .Release.Name }}-nodered
       annotations:
-        checksum/secrets: {{ include (print $.Template.BasePath "/app-secrets.yaml") . | sha256sum }}
+        checksum/secrets: {{ include (print $.Template.BasePath \"/app-secrets.yaml\") . | sha256sum }}
     spec:
+      securityContext:
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       volumes:
       - name: nodered-config
         configMap:
