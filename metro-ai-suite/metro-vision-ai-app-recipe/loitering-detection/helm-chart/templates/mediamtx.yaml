@@ -46,12 +46,28 @@ spec:
       labels:
         app: mediamtx
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       {{- if and .Values.DOCKER_USERNAME .Values.DOCKER_PASSWORD }}
       imagePullSecrets:
       - name: registryauth
       {{- end }}
       containers:
       - name: mediamtx
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          capabilities:
+            drop:
+              - ALL
+          readOnlyRootFilesystem: true
         env:
         - name: http_proxy
           value: {{ $.Values.env.http_proxy }}
@@ -87,4 +103,14 @@ spec:
           value: "10s"
         image: {{ $.Values.mediamtx.image }}:{{ $.Values.mediamtx.imageTag }}
         imagePullPolicy: {{ .Values.imagePullPolicy }}
+        volumeMounts:
+        - name: mediamtx-tmp
+          mountPath: /tmp
+        - name: mediamtx-recordings
+          mountPath: /recordings
+      volumes:
+      - name: mediamtx-tmp
+        emptyDir: {}
+      - name: mediamtx-recordings
+        emptyDir: {}
       restartPolicy: Always

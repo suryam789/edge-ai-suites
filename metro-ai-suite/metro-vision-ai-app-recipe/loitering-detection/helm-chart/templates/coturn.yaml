@@ -37,6 +37,13 @@ spec:
       labels:
         app: coturn
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       {{- if and .Values.DOCKER_USERNAME .Values.DOCKER_PASSWORD }}
       imagePullSecrets:
       - name: registryauth
@@ -45,6 +52,15 @@ spec:
       containers:
       - name: coturn
         image: {{ $.Values.coturn.image }}:{{ $.Values.coturn.imageTag }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          capabilities:
+            drop:
+              - ALL
+          readOnlyRootFilesystem: true
         args: ["-v"]  # Enable verbose logging
         ports:
         - containerPort: {{ $.Values.config.coturn.int.coturn_tcp_port }}
