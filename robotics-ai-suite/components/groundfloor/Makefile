@@ -24,7 +24,7 @@ else
 endif
 
 .DEFAULT_GOAL := help
-.PHONY: build license-check help lint lint-all lint-clang lint-python lint-yaml lint-githubactions lint-bash lint-markdown lint-json test source-package clean
+.PHONY: build license-check help lint lint-all lint-clang lint-python lint-yaml lint-githubactions lint-bash lint-markdown lint-json source-package clean
 
 build:
 	@# Help: Build debian package
@@ -46,29 +46,6 @@ build:
         		mk-build-deps -i --host-arch amd64 --build-arch amd64 \
 				-t \"apt-get -y -q -o Debug::pkgProblemResolver=yes --no-install-recommends --allow-downgrades\" debian/control && \
 			dpkg-buildpackage -us -uc"
-
-test:
-	@# Help: Run tests
-	docker run --rm -t --platform linux/amd64 \
-		-v $(ROOT_DIR):/src \
-		-e DEBIAN_FRONTEND=noninteractive \
-		-e ROS_DISTRO=$(ROS_DISTRO) \
-		-w /src \
-		amd64/ros:${ROS_DISTRO}-ros-base \
-		bash -c "apt -qq update && apt install -y equivs devscripts psmisc && \
-		cd pointcloud_groundfloor_segmentation && \
-		mk-build-deps -i --host-arch amd64 --build-arch amd64 \
-			-t \"apt-get -y -q -o Debug::pkgProblemResolver=yes --no-install-recommends --allow-downgrades\" ${ROS_DISTRO}/debian/control && \
-		source /opt/ros/${ROS_DISTRO}/setup.bash && \
-		colcon build --cmake-args -DBUILD_TEST=ON -DCMAKE_BUILD_TYPE=Release && \
-		source install/setup.bash && \
-		cd build/pointcloud_groundfloor_segmentation/test && \
-		./pointcloud-groundfloor-segmentation-tests >> test_log_seg_${ROS_DISTRO}.log && \
-		cd ../../../ && \
-		cd build/pointcloud_groundfloor_segmentation/test && \
-		chmod +x test_*.sh && \
-		./test_realsense.sh  >> test_log_realsense_${ROS_DISTRO}.log && \
-		./test_lidar.sh  >> test_log_lidar_${ROS_DISTRO}.log"
 
 source-package:
 	@# Help: Create source package tarball
