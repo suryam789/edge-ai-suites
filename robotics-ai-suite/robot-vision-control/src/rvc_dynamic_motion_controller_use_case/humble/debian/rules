@@ -57,7 +57,7 @@ override_dh_shlibdeps:
 	# in the install tree and source it.  It will set things like
 	# CMAKE_PREFIX_PATH, PKG_CONFIG_PATH, and PYTHONPATH.
 	if [ -f "/opt/ros/${ROS_DISTRO}/setup.sh" ]; then . "/opt/ros/${ROS_DISTRO}/setup.sh"; fi && \
-	dh_shlibdeps -l$(CURDIR)/${ROS_DISTRO}/debian/ros-${ROS_DISTRO}-rvc-dynamic-motion-controller-use-case//opt/ros/${ROS_DISTRO}/lib/:$(CURDIR)/${ROS_DISTRO}/debian/ros-${ROS_DISTRO}-rvc-dynamic-motion-controller-use-case//opt/ros/${ROS_DISTRO}/opt/rvc_dynamic_motion_controller_use_case/lib/
+	dh_shlibdeps -l$(CURDIR)/${ROS_DISTRO}/debian/ros-${ROS_DISTRO}-rvc-dynamic-motion-controller-use-case/opt/ros/${ROS_DISTRO}/lib/:$(CURDIR)/${ROS_DISTRO}/debian/ros-${ROS_DISTRO}-rvc-dynamic-motion-controller-use-case/opt/ros/${ROS_DISTRO}/opt/rvc_dynamic_motion_controller_use_case/lib/
 
 override_dh_auto_install:
 	# In case we're installing to a non-standard location, look for a setup.sh
