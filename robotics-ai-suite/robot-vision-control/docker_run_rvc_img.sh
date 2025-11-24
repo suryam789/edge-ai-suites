@@ -17,8 +17,16 @@
 
 # This script starts a Docker container for the RVC project with the necessary configurations.
 
-# Usage: ./docker_run_rvc_img.sh
+# Usage: ./docker_run_rvc_img.sh [ROS_DISTRO]
+# Example: ./docker_run_rvc_img.sh humble
+# Example: ./docker_run_rvc_img.sh jazzy
+
 set -e
+
+# Parse arguments
+ROS_DISTRO=${1:-humble}
+
+echo "Running rvc-exec:${ROS_DISTRO} container..."
 
 # Run the Docker container
 docker run -it \
@@ -31,7 +39,7 @@ docker run -it \
     --env="WAYLAND_DISPLAY" \
     --env="XDG_RUNTIME_DIR" \
     --env="PULSE_SERVER" \
-    rvc-humble-exec:latest \
+    rvc-exec:${ROS_DISTRO} \
     /bin/bash
 
 if [[ $? -ne 0 ]]; then
