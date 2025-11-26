@@ -25,7 +25,7 @@ set -e
 
 # Parse arguments
 ROS_DISTRO=${1:-humble}
-CONTAINER_NAME="rvc-container"
+CONTAINER_NAME="rvc-container-${ROS_DISTRO}"
 
 echo "Checking for existing container: ${CONTAINER_NAME}..."
 
