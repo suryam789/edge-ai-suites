@@ -192,13 +192,39 @@ The following steps guide you through customizing Node-RED flows to implement cr
 
 The custom Node-RED flow implements crowd detection algorithms:
 - **MQTT Input Node**: Subscribes to vehicle detection data from YOLO11s pipeline
-- **Vehicle Position Extractor**: Parses bounding box coordinates (x, y, w, h format) to calculate centroids
-- **Distance Calculator**: Computes Euclidean distances between all vehicle pairs
-- **Hotspot Detector**: Applies proximity thresholds to identify crowd formations (2+ vehicles in close proximity)
-- **Analytics Generator**: Creates crowd metrics, density maps, crowd length measurements, and alerts
+- **Vehicle Position Extractor**: Parses bounding box coordinates (x, y, w, h format) to calculate centroids.
+- **Hotspot Detector**: Computes Euclidean distances between all vehicle pairs. Applies proximity thresholds to identify crowd formations (2+ vehicles in close proximity)
+- **Hotspot Analytics Generator**: Creates crowd metrics, density maps, crowd length measurements, and alerts
 - **MQTT Output Node**: Publishes crowd analytics data to visualization systems
 
-#### 7.2 **Access the Node-RED Interface**
+#### 7.2 **Vibe coding with Claude Sonnet 4.5**
+
+In order to achieve the above business logic, we performed vibe coding with Claude Sonnet 4.5 that is available as a part of Github Co-pilot integration with VSCode.
+
+Essentially, we put ourselves in the shoes of an architect, and put co-pilot in the shoes of a developer. Then we describe our architecture to co-pilot and ask it to generate code to achieve individual components within that architecture.
+
+In this context, our architecture consists of below 3 functions/components as detailed above:
+- **Vehicle Position Extractor**
+- **Hotspot Detector**
+- **Hotspot Analytics Generator**
+
+Here are the example prompts that we used:
+
+- **Prompt for Vehicle Position Extractor**: The code output from co-pilot after vibe coding with this prompt is used in step #7.7 below
+    - Here is the metadata output from DL Streamer Pipeline Server (Video Analytics pipeline) that does object detection. [PASTE METADATA HERE]. Provide a node red function that parses bounding box coordinates (x, y, w, h format) to calculate centroids, only include objects that are vehicles and return output message with vehicle positions.
+- **Prompt for Hotspot Detector**: The code output from co-pilot after vibe coding with this prompt is used in step #7.8 below
+    - Based on the output of the previous function node, compute hotspots of vehicles. Include configurable parameters for the below in the code:
+        - Maximum distance (pixels) to consider vehicles part of same hotspot
+        - Distance calculation method: "euclidean", "manhattan", "horizontal", "vertical" etc.,
+        - Minimum number of parked vehicles to form a hotspot
+        - Maximum movement (pixels) to consider a vehicle stationary
+        - Frames vehicle must stay stationary to be marked as parked
+- **Prompt for Hotspot Analytics Generator**: The code output from co-pilot after vibe coding with this prompt is used in step #7.9 below
+    - Based on the output of the previous function node, generate a table-friendly output with one row per hotspot that can be displayed on a Grafana dashboard. Ensure that each hotpost becomes a separate MQTT message for proper Grafana table visualization
+
+Note: The exact output for the above prompts from co-pilot weren't used as is. It involved more 'prompt engineering' and 'fine tuning' along with setting the correct default configurable options in the code as a part of vibe coding with co-pilot to achive the code that best suits our use case.
+
+#### 7.3 **Access the Node-RED Interface**
 
 Open your web browser and navigate to the Node-RED interface:
 ```
@@ -206,7 +232,7 @@ https://<HOST_IP>/nodered/
 ```
 Replace `<HOST_IP>` with your actual system IP address.
 
-#### 7.3 **Clear Existing Node-RED Flows**
+#### 7.4 **Clear Existing Node-RED Flows**
 
 Remove any existing flows to start with a clean workspace:
 
@@ -214,7 +240,7 @@ Remove any existing flows to start with a clean workspace:
 2. **Delete Selected Nodes**: Press the `Delete` key to remove all selected nodes
 3. **Deploy Changes**: Click the red **Deploy** button in the top-right corner to save the changes
 
-#### 7.4 **Create MQTT Input Connection for Vehicle Data**
+#### 7.5 **Create MQTT Input Connection for Vehicle Data**
 
 Set up an MQTT subscriber node to receive vehicle detection data:
 
@@ -232,7 +258,7 @@ Set up an MQTT subscriber node to receive vehicle detection data:
    - **Name**: `Vehicle Detection Input`
    - Click **Done** to save the configuration
 
-#### 7.5 **Add Debug Output for Vehicle Data Monitoring**
+#### 7.6 **Add Debug Output for Vehicle Data Monitoring**
 
 Create a debug node to monitor incoming vehicle detection data:
 
@@ -249,7 +275,7 @@ Create a debug node to monitor incoming vehicle detection data:
    - Click **Deploy**
    - Check the debug panel (bug icon in the right sidebar) for incoming vehicle detection messages
 
-#### 7.6 **Implement Vehicle Position Extraction Function**
+#### 7.7 **Implement Vehicle Position Extraction Function**
 
 Add a function node to extract vehicle positions from detection data:
 
@@ -367,7 +393,7 @@ Add a function node to extract vehicle positions from detection data:
         return msg;
         ```
 
-#### 7.7 **Implement Hotspot Detection Algorithm**
+#### 7.8 **Implement Hotspot Detection Algorithm**
 
 Add a function node to calculate inter-vehicle distances and detect hotspots:
 
@@ -653,7 +679,7 @@ Add a function node to calculate inter-vehicle distances and detect hotspots:
         ```
 
 
-#### 7.8 **Add Hotspot Analytics Output Processing**
+#### 7.9 **Add Hotspot Analytics Output Processing**
 
 Create a function node to generate hotspot analytics summaries and alerts:
 
@@ -723,7 +749,7 @@ Create a function node to generate hotspot analytics summaries and alerts:
         });
         ```
 
-#### 7.9 **Configure MQTT Output for Hotspot Analytics**
+#### 7.10 **Configure MQTT Output for Hotspot Analytics**
 
 Set up a single MQTT publisher for hotspot analytics data:
 
@@ -737,7 +763,7 @@ Set up a single MQTT publisher for hotspot analytics data:
      - **Retain**: `false`
      - **Name**: `Hotspot Analytics Publisher`
 
-#### 7.10 **Add Debug Monitoring**
+#### 7.11 **Add Debug Monitoring**
 
 Create debug nodes to monitor the hotspot analytics pipeline:
 
@@ -752,12 +778,12 @@ Create debug nodes to monitor the hotspot analytics pipeline:
    - Set each debug node to output `msg.payload`
    - Enable console output for troubleshooting
 
-#### 7.11 **Deploy the Crowd Analytics Flow**
+#### 7.12 **Deploy the Crowd Analytics Flow**
 
 1. **Deploy the Complete Flow**:
    - Click the Deploy button on the Top Right side in Node-RED interface
 
-#### 7.12 **Expected Node-RED Flow**
+#### 7.13 **Expected Node-RED Flow**
 
 ![Crowd Analytics Node-RED Flow](_images/crowd-analytics-node-red-flow.png)
 
