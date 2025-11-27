@@ -162,7 +162,7 @@ jobs:
           
       - name: Create tarball for upload
         run: |
-          cd microservices/multilevel-video-understanding
+          cd metro-ai-suite/visual-search-question-and-answering
           tar -czvf coverity_output.tgz -C . cov-int
           # Verify tarball contents
           echo "=== Tarball Contents ==="
