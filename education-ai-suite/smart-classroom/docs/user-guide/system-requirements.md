@@ -34,4 +34,8 @@ This page provides detailed hardware, software, platform requirements, and suppo
 - **fp16** → Recommended for higher-end systems (better accuracy, GPU acceleration)  
 - **int4** → Supported, but may reduce accuracy (use only if memory-constrained)  
 
+## Video Pipeline
+- Supports 3 Video pipelines (front, back and board) up to 45 minutes
+- Supports .mp4 format
+
  Run summarization on **GPU** (Intel® iGPU / Arc GPU) for faster performance.  
