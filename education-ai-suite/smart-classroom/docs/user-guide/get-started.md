@@ -52,6 +52,7 @@ cd smart-classroom
 pip install --upgrade -r requirements.txt
 pip install --pre --upgrade ipex-llm[xpu_2.6] --extra-index-url https://download.pytorch.org/whl/xpu
 ```
+**Note: `smartclassroom_ipex` should only be used with FunAsr and Ipex related models (Specified in 2nd section). Don't configure Openvino related models in `smartclassroom_ipex`**
 > 💡 *Use `smartclassroom` if you don’t need IPEX. Use `smartclassroom_ipex` if you want IPEX summarization.*
 
 **e. Install DL Streamer**
