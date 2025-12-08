@@ -13,12 +13,12 @@ and `Weld Anomaly Detection` sample apps
 
 <!--hide_directive
 ::::{tab-set}
-:::{tab-item} **Wind Turbine Anomaly Detection**
+:::{tab-item} hide_directive--> **Wind Turbine Anomaly Detection**
+<!--hide_directive
 :sync: tab1
-
-::::
-:::
 hide_directive-->
+
+
 
 [wind-turbine-anomaly-detection/time-series-analytics-config/config.json](
 https://github.com/open-edge-platform/edge-ai-suites/blob/main/manufacturing-ai-suite/industrial-edge-insights-time-series/apps/wind-turbine-anomaly-detection/time-series-analytics-config/config.json)
@@ -35,11 +35,9 @@ https://github.com/open-edge-platform/edge-ai-suites/blob/main/manufacturing-ai-
 
 <!--hide_directive
 :::
-:::{tab-item} **Weld Anomaly Detection**
+:::{tab-item} hide_directive--> **Weld Anomaly Detection**
+<!--hide_directive
 :sync: tab2
-
-::::
-:::
 hide_directive-->
 
 [weld-anomaly-detection/time-series-analytics-config/config.json](
