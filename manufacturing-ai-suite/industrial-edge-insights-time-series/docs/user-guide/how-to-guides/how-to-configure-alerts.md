@@ -55,8 +55,8 @@ https://github.com/open-edge-platform/edge-ai-suites/blob/release-2025.2.0/manuf
    }
  ```
 
-:::
-::::
+<!--:::
+::::-->
 
 #### Configure MQTT Alert in TICK Script
 
