@@ -456,7 +456,7 @@ To enable OPC-UA alerts in `Time Series Analytics Microservice`, please follow b
    <!--hide_directive
    ::::{tab-set}
    :::{tab-item} hide_directive--> **Wind Turbine Anomaly Detection**
-   hide_directive-->
+   <!--hide_directive
    :sync: tab1
    hide_directive-->
    
