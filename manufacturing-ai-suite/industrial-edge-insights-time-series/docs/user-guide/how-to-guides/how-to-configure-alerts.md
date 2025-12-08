@@ -111,8 +111,8 @@ data0
             .qos(1)
 ```
 
-:::
-::::
+<!--:::
+::::-->
 
 > **Note**: Setting **QoS** to `1` ensures messages are delivered at least once.
 > Alerts are preserved and resent if the MQTT broker reconnects after downtime.
