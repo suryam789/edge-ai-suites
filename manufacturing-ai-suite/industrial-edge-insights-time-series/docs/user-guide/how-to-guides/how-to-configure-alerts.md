@@ -204,8 +204,7 @@ data0
 ```
 
 <!--hide_directive
-
-:::
+:::{tab-set}
 :::{tab-item} hide_directive--> **Weld Anomaly Detection**
 <!--hide_directive
 :sync: tab2
@@ -271,7 +270,7 @@ curl -k -X 'POST' \
 ```
 
 <!--hide_directive
-:::
+:::{tab-set}
 :::{tab-item} hide_directive--> **Weld Anomaly Detection**
 <!--hide_directive
 :sync: tab2
@@ -374,7 +373,7 @@ To subscribe to MQTT topics in a Helm deployment, execute the following command:
   ```
 
   <!--hide_directive
-  :::
+  :::{tab-set}
   :::{tab-item} hide_directive--> **Weld Anomaly Detection**
   <!--hide_directive
   :sync: tab2
@@ -427,7 +426,7 @@ To enable OPC-UA alerts in `Time Series Analytics Microservice`, please follow b
    ```
 
   <!--hide_directive
-   :::
+   :::{tab-set}
    :::{tab-item} hide_directive--> **Weld Anomaly Detection**
     <!--hide_directive
    :sync: tab2
