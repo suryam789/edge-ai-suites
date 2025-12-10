@@ -56,7 +56,28 @@ Complete the [get started guide](../../../gsg_robot/index.rst) before continuing
 
 ### Install Deb package
 
-Install the `ros-jazzy-its-planner` Deb package from the
+Install dependencies required to run simulations:
+
+<!--hide_directive::::{tab-set}
+:::{tab-item}hide_directive--> **Jazzy**
+<!--hide_directive:sync: jazzyhide_directive-->
+
+```bash
+sudo apt install ros-jazzy-turtlebot3-gazebo
+```
+
+<!--hide_directive:::
+:::{tab-item}hide_directive-->  **Humble**
+<!--hide_directive:sync: humblehide_directive-->
+
+```bash
+sudo apt install ros-humble-turtlebot3-gazebo
+```
+
+<!--hide_directive:::
+::::hide_directive-->
+
+Install the ITS Path Planner Deb package from the
 Intel® Autonomous Mobile Robot APT repository
 
 <!--hide_directive::::{tab-set}
@@ -110,7 +131,7 @@ To launch the default ITS planner which is based on differential drive robot, ru
 <!--hide_directive:sync: jazzyhide_directive-->
 
 ```bash
-ros2 launch nav2_bringup tb3_simulation_launch.py headless:=False params_file:=/opt/ros/jazzy/share/its_planner/nav2_params.yaml default_bt_xml_filename:=/opt/ros/jazzy/share/its_planner/navigate_w_recovery.xml
+ros2 launch its_planner its_differential_launch.py use_sim_time:=true
 ```
 
 <!--hide_directive:::
@@ -118,7 +139,7 @@ ros2 launch nav2_bringup tb3_simulation_launch.py headless:=False params_file:=/
 <!--hide_directive:sync: humblehide_directive-->
 
 ```bash
-ros2 launch nav2_bringup tb3_simulation_launch.py headless:=False params_file:=/opt/ros/humble/share/its_planner/nav2_params.yaml default_bt_xml_filename:=/opt/ros/humble/share/its_planner/navigate_w_recovery.xml
+ros2 launch its_planner its_differential_launch.py use_sim_time:=true
 ```
 
 <!--hide_directive:::
@@ -132,7 +153,7 @@ ITS planner run:
 <!--hide_directive:sync: jazzyhide_directive-->
 
 ```bash
-ros2 launch nav2_bringup tb3_simulation_launch.py headless:=False params_file:=/opt/ros/jazzy/share/its_planner/nav2_params_dubins.yaml default_bt_xml_filename:=/opt/ros/jazzy/share/its_planner/navigate_w_recovery.xml
+ros2 launch its_planner its_ackermann_launch.py use_sim_time:=true
 ```
 
 <!--hide_directive:::
@@ -140,7 +161,7 @@ ros2 launch nav2_bringup tb3_simulation_launch.py headless:=False params_file:=/
 <!--hide_directive:sync: humblehide_directive-->
 
 ```bash
-ros2 launch nav2_bringup tb3_simulation_launch.py headless:=False params_file:=/opt/ros/humble/share/its_planner/nav2_params_dubins.yaml default_bt_xml_filename:=/opt/ros/humble/share/its_planner/navigate_w_recovery.xml
+ros2 launch its_planner its_ackermann_launch.py use_sim_time:=true
 ```
 
 <!--hide_directive:::
