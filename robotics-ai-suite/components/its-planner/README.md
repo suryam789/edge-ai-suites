@@ -27,7 +27,7 @@ with compute path to pose and follow path should be used.
 
 ### System Requirements
 
-Prepare the target system following the [official documentation](https://docs.openedgeplatform.intel.com/edge-ai-suites/robotics-ai-suite/main/robotics/gsg_robot/prepare-system.html).
+Prepare the target system following the [official documentation](https://docs.openedgeplatform.intel.com/2025.2/edge-ai-suites/robotics-ai-suite/robotics/gsg_robot/prepare-system.html).
 
 ### Build
 
