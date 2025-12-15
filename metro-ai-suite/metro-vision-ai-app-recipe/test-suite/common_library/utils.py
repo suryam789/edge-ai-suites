@@ -7,7 +7,6 @@ import sys
 import re
 import logging
 
-from ajayprab.IEdgeInsights.ModelRegistry import app
 # from selenium import webdriver
 # from selenium.webdriver.chrome.options import Options
 
