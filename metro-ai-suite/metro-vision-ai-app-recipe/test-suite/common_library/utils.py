@@ -6,6 +6,8 @@ import subprocess
 import sys
 import re
 import logging
+
+from ajayprab.IEdgeInsights.ModelRegistry import app
 # from selenium import webdriver
 # from selenium.webdriver.chrome.options import Options
 
@@ -195,75 +197,80 @@ class utils:
                 return
             logging.info("Unsupported app type for pipeline start")
             return
-        # Check current status
-        status_output = subprocess.check_output("./sample_status.sh", shell=True, executable='/bin/bash').decode('utf-8')
-        logging.info(f"sample_status.sh output: {status_output}")
-        if "No running pipelines" not in status_output:
-            raise Exception("Pipelines are already running")
-        logging.info("No pipelines are currently running - ready to start new pipeline")
-        # Start pipelines
-        cmd = "./sample_start.sh"
-        result = subprocess.run(cmd, shell=True, executable='/bin/bash', capture_output=True, text=True)
-        output = result.stdout
-        if app == "SP" or app == "LD":
-            success_message = "Pipelines initialized."
-            if success_message not in output:
-                raise Exception(f"Pipeline start failed. Expected message not found: '{success_message}'")
-            return None
-        response_ids = []
-        for line in output.split('\n'):
-            id_matches = re.findall(r'[0-9a-f]{32}', line)
-            for match in id_matches:
-                if match not in response_ids:
-                    response_ids.append(match)
-        if response_ids:
-            logging.info(f"Found {len(response_ids)} response IDs for LD: {response_ids}")
-            return response_ids
-        raise Exception
-        
+        else:
+            # Check current status
+            status_output = subprocess.check_output("./sample_status.sh", shell=True, executable='/bin/bash').decode('utf-8')
+            logging.info(f"sample_status.sh output: {status_output}")
+            if "No running pipelines" not in status_output:
+                raise Exception("Pipelines are already running")
+            logging.info("No pipelines are currently running - ready to start new pipeline")
+            # Start pipelines
+            cmd = "./sample_start.sh"
+            result = subprocess.run(cmd, shell=True, executable='/bin/bash', capture_output=True, text=True)
+            output = result.stdout
+            if app == "SP" or app == "LD":
+                success_message = "Pipelines initialized."
+                if success_message not in output:
+                    raise Exception(f"Pipeline start failed. Expected message not found: '{success_message}'")
+                return None
+            response_ids = []
+            for line in output.split('\n'):
+                id_matches = re.findall(r'[0-9a-f]{32}', line)
+                for match in id_matches:
+                    if match not in response_ids:
+                        response_ids.append(match)
+            if response_ids:
+                logging.info(f"Found {len(response_ids)} response IDs for LD: {response_ids}")
+                return response_ids
+            raise Exception
+            
 
     def get_pipeline_status(self, value):
         """Optimized pipeline status check with real-time monitoring"""
         try:
             os.chdir(self.metro_path)
             logging.info("Checking pipeline status with sample_status.sh")
-            with subprocess.Popen("./sample_status.sh", shell=True, stdout=subprocess.PIPE,  stderr=subprocess.PIPE, text=True, executable='/bin/bash') as process:
-                fps_reports = []
-                start_time = time.time()
-                # Monitor for up to 15 seconds or until we get sufficient data
-                while time.time() - start_time < 15:
-                    line = process.stdout.readline()
-                    if not line:
-                        time.sleep(0.1)
-                        continue
-                    line = line.strip()
-                    logging.info(f"Status: {line}")
-                    # Extract FPS data efficiently
-                    if "pipelines fps:" in line:
-                        try:
-                            start_idx = line.find('pipelines fps:')
-                            open_idx = line.find('(', start_idx)
-                            close_idx = line.find(')', open_idx)
-                            if open_idx != -1 and close_idx != -1 and close_idx > open_idx:
-                                inside = line[open_idx+1:close_idx].strip()
-                                parts = [p for p in inside.split() if p]
-                                fps_values = []
-                                for p in parts:
-                                    try:
-                                        fps_values.append(float(p))
-                                    except:
-                                        continue
-                                if fps_values:
-                                    fps_reports.append(fps_values)
-                                    avg_fps = sum(fps_values) / len(fps_values)
-                                    logging.info(f"FPS: {fps_values} (avg: {avg_fps:.2f})")
-                        except Exception as e:
-                            logging.warning(f"Failed to parse FPS line: {e}")
-                    # Early exit if we have enough FPS data
-                    if len(fps_reports) >= 2:
-                        logging.info("Sufficient FPS data collected, terminating early")
-                        break
-                return self._validate_fps_data(fps_reports)            
+            if app == "SI":
+                logging.info("SI app - skipping pipeline status. Not yet implemented")
+                return
+            else:
+                with subprocess.Popen("./sample_status.sh", shell=True, stdout=subprocess.PIPE,  stderr=subprocess.PIPE, text=True, executable='/bin/bash') as process:
+                    fps_reports = []
+                    start_time = time.time()
+                    # Monitor for up to 15 seconds or until we get sufficient data
+                    while time.time() - start_time < 15:
+                        line = process.stdout.readline()
+                        if not line:
+                            time.sleep(0.1)
+                            continue
+                        line = line.strip()
+                        logging.info(f"Status: {line}")
+                        # Extract FPS data efficiently
+                        if "pipelines fps:" in line:
+                            try:
+                                start_idx = line.find('pipelines fps:')
+                                open_idx = line.find('(', start_idx)
+                                close_idx = line.find(')', open_idx)
+                                if open_idx != -1 and close_idx != -1 and close_idx > open_idx:
+                                    inside = line[open_idx+1:close_idx].strip()
+                                    parts = [p for p in inside.split() if p]
+                                    fps_values = []
+                                    for p in parts:
+                                        try:
+                                            fps_values.append(float(p))
+                                        except:
+                                            continue
+                                    if fps_values:
+                                        fps_reports.append(fps_values)
+                                        avg_fps = sum(fps_values) / len(fps_values)
+                                        logging.info(f"FPS: {fps_values} (avg: {avg_fps:.2f})")
+                            except Exception as e:
+                                logging.warning(f"Failed to parse FPS line: {e}")
+                        # Early exit if we have enough FPS data
+                        if len(fps_reports) >= 2:
+                            logging.info("Sufficient FPS data collected, terminating early")
+                            break
+                    return self._validate_fps_data(fps_reports)            
         except Exception as e:
             raise Exception(f"Pipeline status check failed: {e}")
     
