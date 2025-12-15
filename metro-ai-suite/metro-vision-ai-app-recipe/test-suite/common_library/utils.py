@@ -124,7 +124,7 @@ class utils:
         """Execute docker compose up and verify container status"""
         try:
             logging.info("Starting Docker containers with docker compose up...")
-            subprocess.call("docker compose up -d", shell=True, executable='/bin/bash')
+            subprocess.check_output("docker compose up -d", shell=True, executable='/bin/bash')
             time.sleep(5)
             return self._verify_container_status(value)
         except Exception as e:
@@ -481,11 +481,11 @@ class utils:
         logging.info('Stopping services with docker compose down')
         os.chdir(self.metro_path)
         try:
-            subprocess.call("docker compose down -v", shell=True, executable='/bin/bash')
+            subprocess.check_output("docker compose down -v", shell=True, executable='/bin/bash')
             time.sleep(3)
             logging.info('Verifying no services are running')
 
-            docker_ps_output = subprocess.call("docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'", shell=True, executable='/bin/bash')
+            docker_ps_output = subprocess.check_output("docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'", shell=True, executable='/bin/bash')
             if docker_ps_output is None:
                 docker_ps_output = ""
             logging.info(f"Current running containers: {docker_ps_output}")
