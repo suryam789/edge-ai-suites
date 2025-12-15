@@ -229,6 +229,7 @@ class utils:
         try:
             os.chdir(self.metro_path)
             logging.info("Checking pipeline status with sample_status.sh")
+            app = value.get("app")
             if app == "SI":
                 logging.info("SI app - skipping pipeline status. Not yet implemented")
                 return
@@ -491,9 +492,7 @@ class utils:
             time.sleep(3)
             logging.info('Verifying no services are running')
 
-            docker_ps_output = subprocess.check_output("docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'", shell=True, executable='/bin/bash')
-            if docker_ps_output is None:
-                docker_ps_output = ""
+            docker_ps_output = subprocess.check_output("docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'", shell=True, executable='/bin/bash').decode('utf-8')
             logging.info(f"Current running containers: {docker_ps_output}")
             lines = docker_ps_output.strip().split('\n')[1:]
             running_containers = []
