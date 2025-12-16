@@ -14,21 +14,24 @@ jobs:
       contents: write
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # 4.2.2
-      with:
-        token: ${{ secrets.SIV_USER_TOKEN_GH }}
-
-    - name: Set up Git
+    - name: Get latest commit SHA
+      id: get-sha
       run: |
-        git config user.name "${{ vars.SIV_USER }}"
-        git config user.email "${{ vars.SIV_USER_EMAIL }}"
-        git remote set-url origin https://${{ vars.SIV_USER }}:${{ secrets.SIV_USER_TOKEN_GH }}@github.com/${{ github.repository }}
+        COMMIT_SHA=$(curl -s -H "Authorization: token ${{ secrets.SIV_USER_TOKEN_GH }}" \
+          https://api.github.com/repos/${{ github.repository }}/commits/main | jq -r '.sha')
+        echo "sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
 
-    - name: Create and push tag
+    - name: Create lightweight tag via API
       run: |
         TAG_NAME="${{ vars.SIV_WEEKLY_BUILD_PREFIX }}-$(date +'%Y%m%d')"
-        git tag "$TAG_NAME"
-        git push origin "$TAG_NAME"
-      env:
-        GH_TOKEN: ${{ secrets.SIV_USER_TOKEN_GH }}
+        
+        curl -X POST \
+          -H "Authorization: token ${{ secrets.SIV_USER_TOKEN_GH }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/${{ github.repository }}/git/refs \
+          -d "{
+            \"ref\": \"refs/tags/${TAG_NAME}\",
+            \"sha\": \"${{ steps.get-sha.outputs.sha }}\"
+          }"
+        
+        echo "Created lightweight tag: ${TAG_NAME}"
