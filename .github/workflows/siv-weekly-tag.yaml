@@ -17,7 +17,7 @@ jobs:
     - name: Get latest commit SHA
       id: get-sha
       run: |
-        COMMIT_SHA=$(curl -s -H "Authorization: token ${{ secrets.SIV_USER_TOKEN_GH }}" \
+        COMMIT_SHA=$(curl -s -H "Authorization: Bearer ${{ secrets.SIV_USER_TOKEN_GH }}" \
           https://api.github.com/repos/${{ github.repository }}/commits/main | jq -r '.sha')
         echo "sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
 
@@ -26,7 +26,7 @@ jobs:
         TAG_NAME="${{ vars.SIV_WEEKLY_BUILD_PREFIX }}-$(date +'%Y%m%d')"
         
         curl -X POST \
-          -H "Authorization: token ${{ secrets.SIV_USER_TOKEN_GH }}" \
+          -H "Authorization: Bearer ${{ secrets.SIV_USER_TOKEN_GH }}" \
           -H "Accept: application/vnd.github.v3+json" \
           https://api.github.com/repos/${{ github.repository }}/git/refs \
           -d "{
@@ -34,4 +34,12 @@ jobs:
             \"sha\": \"${{ steps.get-sha.outputs.sha }}\"
           }"
         
-        echo "Created lightweight tag: ${TAG_NAME}"
+        printf "\n"
+        printf "✅ Weekly Build Tag Created Successfully!\n"
+        printf "==========================================\n"
+        printf "📌 Tag Name:     %s\n" "${TAG_NAME}"
+        printf "🔗 Commit SHA:   %s\n" "${{ steps.get-sha.outputs.sha }}"
+        printf "📁 Repository:   %s\n" "${{ github.repository }}"
+        printf "⏰ Created:      %s\n" "$(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+        printf "🌐 View Online:  https://github.com/%s/releases/tag/%s\n" "${{ github.repository }}" "${TAG_NAME}"
+        printf "\n"
