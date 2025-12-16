@@ -17,29 +17,71 @@ jobs:
     - name: Get latest commit SHA
       id: get-sha
       run: |
-        COMMIT_SHA=$(curl -s -H "Authorization: Bearer ${{ secrets.SIV_USER_TOKEN_GH }}" \
-          https://api.github.com/repos/${{ github.repository }}/commits/main | jq -r '.sha')
-        echo "sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
+        echo "🔍 Getting latest commit SHA from main branch..."
+        
+        RESPONSE=$(curl -s -w "%{http_code}" -o commit.json \
+          -H "Authorization: Bearer ${{ secrets.SIV_USER_TOKEN_GH }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/${{ github.repository }}/commits/main)
+        
+        HTTP_CODE="${RESPONSE: -3}"
+        
+        if [ "$HTTP_CODE" -eq 200 ]; then
+          COMMIT_SHA=$(jq -r '.sha' commit.json)
+          echo "✅ Successfully retrieved commit SHA: $COMMIT_SHA"
+          echo "sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
+        else
+          echo "❌ Failed to get commit SHA. HTTP Code: $HTTP_CODE"
+          echo "Response:"
+          cat commit.json
+          exit 1
+        fi
 
     - name: Create lightweight tag via API
       run: |
         TAG_NAME="${{ vars.SIV_WEEKLY_BUILD_PREFIX }}-$(date +'%Y%m%d')"
+        COMMIT_SHA="${{ steps.get-sha.outputs.sha }}"
         
-        curl -X POST \
+        echo "🚀 Creating tag: $TAG_NAME"
+        echo "📍 Target commit: $COMMIT_SHA"
+        
+        if [ "$COMMIT_SHA" = "" ] || [ "$COMMIT_SHA" = "null" ]; then
+          echo "❌ Invalid commit SHA: $COMMIT_SHA"
+          exit 1
+        fi
+        
+        RESPONSE=$(curl -s -w "%{http_code}" -o tag.json \
           -H "Authorization: Bearer ${{ secrets.SIV_USER_TOKEN_GH }}" \
           -H "Accept: application/vnd.github.v3+json" \
+          -H "Content-Type: application/json" \
+          -X POST \
           https://api.github.com/repos/${{ github.repository }}/git/refs \
           -d "{
             \"ref\": \"refs/tags/${TAG_NAME}\",
-            \"sha\": \"${{ steps.get-sha.outputs.sha }}\"
-          }"
+            \"sha\": \"${COMMIT_SHA}\"
+          }")
         
-        printf "\n"
-        printf "✅ Weekly Build Tag Created Successfully!\n"
-        printf "==========================================\n"
-        printf "📌 Tag Name:     %s\n" "${TAG_NAME}"
-        printf "🔗 Commit SHA:   %s\n" "${{ steps.get-sha.outputs.sha }}"
-        printf "📁 Repository:   %s\n" "${{ github.repository }}"
-        printf "⏰ Created:      %s\n" "$(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-        printf "🌐 View Online:  https://github.com/%s/releases/tag/%s\n" "${{ github.repository }}" "${TAG_NAME}"
-        printf "\n"
+        HTTP_CODE="${RESPONSE: -3}"
+        
+        if [ "$HTTP_CODE" -eq 201 ]; then
+          printf "\n"
+          printf "✅ Weekly Build Tag Created Successfully!\n"
+          printf "==========================================\n"
+          printf "📌 Tag Name:     %s\n" "${TAG_NAME}"
+          printf "🔗 Commit SHA:   %s\n" "${COMMIT_SHA}"
+          printf "📁 Repository:   %s\n" "${{ github.repository }}"
+          printf "⏰ Created:      %s\n" "$(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          printf "🌐 View Online:  https://github.com/%s/releases/tag/%s\n" "${{ github.repository }}" "${TAG_NAME}"
+          printf "\n"
+          echo "📋 API Response:"
+          cat tag.json | jq '.'
+        else
+          printf "\n"
+          printf "❌ Failed to create tag!\n"
+          printf "========================\n"
+          printf "HTTP Code: %s\n" "$HTTP_CODE"
+          printf "Response:\n"
+          cat tag.json
+          printf "\n"
+          exit 1
+        fi
