@@ -1,15 +1,15 @@
 **Manufacturing AI Suite (MAS)** is a comprehensive toolkit for building, deploying, and scaling AI applications in industrial environments. Powered by Intel’s Edge AI technologies, it enables real-time integration and innovation with optimized hardware.
 
 It includes:
-•	Tools for AI acceleration (for example, MQTT/OPC UA support, analytics libraries, camera system software)
-•	A complete AI pipeline for closed-loop systems
-•	Benchmarking support for evaluating performance across time series, vision, and generative AI workloads
+-	Tools for AI acceleration (for example, MQTT/OPC UA support, analytics libraries, camera system software)
+-	A complete AI pipeline for closed-loop systems
+-	Benchmarking support for evaluating performance across time series, vision, and generative AI workloads
 
-The Manufacturing AI Suite helps you develop solutions for:
-•	**Production Workflow**: Detect defects, optimize efficiency
-•	**Workplace Safety**: AI-driven risk reduction
-•	**Real-Time Insights**: Local data processing, trend tracking
-•	**Automation**: Instant alerts and corrective actions
+**Manufacturing AI Suite** helps you develop solutions for:
+-	**Production Workflow**: Detect defects, optimize efficiency
+-	**Workplace Safety**: AI-driven risk reduction
+-	**Real-Time Insights**: Local data processing, trend tracking
+-	**Automation**: Instant alerts and corrective actions
 
 **Sample Applications**
 
