@@ -136,6 +136,10 @@ dlstreamerPipelineServer:
   # Overrides the storage class name
   storageClassName: "standard"
   gpuWorkload: false
+  gpu:
+    enabled: false
+    type: "gpu.intel.com/xe"  # GPU resource type for Intel GPUs
+    count: 1  # Number of GPUs to allocate
 # This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 imagePullSecrets: []
 

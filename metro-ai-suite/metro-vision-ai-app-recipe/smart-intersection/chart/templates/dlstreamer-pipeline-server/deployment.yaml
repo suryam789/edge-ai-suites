@@ -115,6 +115,11 @@ spec:
           runAsUser: 0
           runAsGroup: 0
         {{- end }}
+        {{- if .Values.dlstreamerPipelineServer.gpu.enabled }}
+        resources:
+          limits:
+            {{ .Values.dlstreamerPipelineServer.gpu.type }}: {{ .Values.dlstreamerPipelineServer.gpu.count }}
+        {{- end }}
         terminationMessagePath: /tmp/termination-log
         command: ["/bin/bash", "-c"]
         args:
