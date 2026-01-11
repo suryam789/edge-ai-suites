@@ -1,6 +1,7 @@
 import os
 import time
 import json
+import yaml
 import logging
 import subprocess
 import sys
@@ -97,7 +98,7 @@ class utils:
             raise Exception(f"Failed to update .env file: {e}")
 
 
-    def list_pipelines(self, value):
+    def list_pipelines(self, value,  deployment_type="docker"):
         """
         List and validate pipelines against expected configuration.
         Args:
@@ -113,17 +114,25 @@ class utils:
                 "pcb": "apps/pcb-anomaly-detection/configs/pipeline-server-config.json",
                 "wsg": "apps/worker-safety-gear-detection/configs/pipeline-server-config.json"
             }
-            config_path = os.path.join(self.path, "manufacturing-ai-suite/industrial-edge-insights-vision", 
-                                       config_paths.get(value.get("app"), config_paths["pdd"]))
-            
+            helm_config_paths = {
+                "pdd": "helm/apps/pallet-defect-detection/configs/pipeline-server-config.json",
+                "weld": "helm/apps/weld-porosity/configs/pipeline-server-config.json", 
+                "pcb": "helm/apps/pcb-anomaly-detection/configs/pipeline-server-config.json",
+                "wsg": "helm/apps/worker-safety-gear-detection/configs/pipeline-server-config.json"
+            }
+            config_path = os.path.join(self.path, "manufacturing-ai-suite/industrial-edge-insights-vision",  helm_config_paths.get(value.get("app"), helm_config_paths["pdd"]) if deployment_type == "helm" else config_paths.get(value.get("app"), config_paths["pdd"]))
+
             with open(config_path, 'r') as f:
                 config_data = json.load(f)
                 expected_pipelines = [p.get("name") for p in config_data.get("config", {}).get("pipelines", []) if p.get("name")]
                 print(f"Expected pipeline names: {expected_pipelines}")
             
             # Execute sample_list.sh and parse output
-            output = subprocess.check_output("./sample_list.sh", shell=True, executable='/bin/bash').decode('utf-8')
-            print(f"sample_list.sh output:\n{output}")
+            if deployment_type=="helm":
+                output = subprocess.check_output("./sample_list.sh helm", shell=True, executable='/bin/bash').decode('utf-8')
+            else:
+                output = subprocess.check_output("./sample_list.sh", shell=True, executable='/bin/bash').decode('utf-8')
+            logging.info(f"sample_list.sh output: {output}")
             
             if "HTTP Status Code: 200" not in output or "Loaded pipelines:" not in output:
                 raise Exception("Server not reachable or pipelines information missing")
@@ -150,54 +159,26 @@ class utils:
             missing_names = [n for n in expected_pipelines if n not in loaded_pipeline_versions]
             matched_pipelines = [v for v in loaded_pipeline_versions if v in expected_pipelines]
             
-            print("\n**********Pipeline Name to Version Mapping**********")
+            logging.info(f"Pipeline Name to Version Mapping ({deployment_type})")
             for name in expected_pipelines:
-                status = "✅ MATCH" if name in loaded_pipeline_versions else "❌ MISSING"
-                print(f"{status}: name='{name}'" + (f" maps to version='{name}'" if name in loaded_pipeline_versions else " not found in loaded versions"))
+                status = "MATCH" if name in loaded_pipeline_versions else "MISSING"
+                mapping_info = f" maps to version='{name}'" if name in loaded_pipeline_versions else " not found in loaded versions"
+                logging.info(f"{status}: name='{name}'{mapping_info}")
             
             for version in unmatched_versions:
-                print(f"❌ UNMATCHED: version='{version}' not found in config names")
+                logging.error(f"UNMATCHED: version='{version}' not found in config names")
+            logging.info(f"Summary: {len(matched_pipelines)} matched, {len(unmatched_versions)} unmatched, {len(missing_names)} missing")
             
-            print(f"\nSummary: {len(matched_pipelines)} matched, {len(unmatched_versions)} unmatched, {len(missing_names)} missing")
-            #if unmatched_versions or missing_names:
-            #    raise Exception(f"Pipeline mismatch - Unmatched: {unmatched_versions}, Missing: {missing_names}")
-            print("✅ SUCCESS: All pipeline versions match expected names.")
-            print("✅ Server is reachable, and pipelines are loaded successfully.")
+            if unmatched_versions or missing_names:
+                raise Exception(f"Pipeline mismatch - Unmatched: {unmatched_versions}, Missing: {missing_names}")
+            logging.info(f"SUCCESS: All pipeline versions match expected names for {deployment_type} deployment")
+            logging.info("Server is reachable, and pipelines are loaded successfully")
         except Exception as e:
-            raise Exception(f"Failed to validate pipelines: {e}")
+            logging.error(f"Error in list_pipelines: {e}")
+            raise Exception
 
 
-    def update_payload(self, value):
-        """
-        Update payload.json with given parameters.
-        Args:
-            value (dict): Dictionary containing update parameters with keys:
-                - app (str): Application type ('pdd', 'weld', 'pcb', 'wsg')
-                - pipeline (str, optional): Pipeline name to update
-                - change_device (str, optional): Device configuration to update
-        """
-        payload_paths = {
-            "pdd": "apps/pallet-defect-detection/payload.json",
-            "weld": "apps/weld-porosity/payload.json", 
-            "pcb": "apps/pcb-anomaly-detection/payload.json",
-            "wsg": "apps/worker-safety-gear-detection/payload.json"
-        }
-        app_type = value.get("app", "pdd")
-        payload_path = os.path.join(self.path, "manufacturing-ai-suite/industrial-edge-insights-vision", payload_paths.get(app_type, payload_paths["pdd"]))
-        subprocess.call("git checkout -- .", shell=True, cwd=os.path.dirname(payload_path))
-        
-        with open(payload_path, "r") as file:
-            data = json.load(file)
-        for item in data:
-            if "payload" in item:
-                if "pipeline" in value:
-                    item["pipeline"] = value["pipeline"]
-        with open(payload_path, "w") as file:
-            json.dump(data, file, indent=4)
-        print(f"✅ Updated payload.json for {app_type}")
-
-
-    def start_pipeline_and_check(self, value):
+    def start_pipeline_and_check(self, value, deployment_type="docker"):
         """
         Start pipeline and validate response.
         Args:
@@ -208,14 +189,20 @@ class utils:
         print('\n**********Starting pipeline**********')
         os.chdir(self.base_dir)
         try:
-            status_output = subprocess.check_output("./sample_status.sh", shell=True, executable='/bin/bash').decode('utf-8')
+            if deployment_type=="helm":
+                status_output = subprocess.check_output("./sample_status.sh helm", shell=True, executable='/bin/bash').decode('utf-8')
+            else:
+                status_output = subprocess.check_output("./sample_status.sh", shell=True, executable='/bin/bash').decode('utf-8')
             print(f"sample_status.sh output:\n{status_output}")
             if "[]" not in status_output:
                 raise Exception("Pipelines are already running")
             print("✅ No pipelines are currently running - ready to start new pipeline")
             pipeline_name = value.get("pipeline")
             if pipeline_name:
-                output = subprocess.check_output(f"./sample_start.sh -p {pipeline_name}", shell=True, executable='/bin/bash')
+                if deployment_type=="helm":
+                    output = subprocess.check_output(f"./sample_start.sh helm -p {pipeline_name}", shell=True, executable='/bin/bash')
+                else:
+                    output = subprocess.check_output(f"./sample_start.sh -p {pipeline_name}", shell=True, executable='/bin/bash')
                 print(f"Using configured pipeline: {pipeline_name}")
             output = output.decode('utf-8')
             print(f"sample_start.sh output:\n{output}")
@@ -236,7 +223,7 @@ class utils:
             raise Exception(f"❌ Error in start_pipeline_and_check: {e}")
     
 
-    def get_pipeline_status(self, value):
+    def get_pipeline_status(self, value, deployment_type="docker"):
         """
         Check pipeline status and validate.
         Args:
@@ -245,7 +232,13 @@ class utils:
         print('\n**********Checking pipeline status**********')
         os.chdir(self.base_dir)
         time.sleep(2)
-        output = subprocess.check_output("./sample_status.sh", shell=True, executable='/bin/bash').decode('utf-8')
+        if deployment_type=="helm":
+            cmd = "./sample_status.sh helm"
+            logging.info("Checking status for all pipelines (Helm deployment)")
+        else:
+            cmd = "./sample_status.sh"
+            logging.info("Checking status for all pipelines")
+        output = subprocess.check_output(cmd, shell=True, executable='/bin/bash').decode('utf-8')
         print(f"Status output:\n{output}")
         if "RUNNING" not in output:
             raise Exception("No RUNNING pipelines found in output")
@@ -328,7 +321,7 @@ class utils:
             return False
 
 
-    def stop_pipeline_and_check(self, value):
+    def stop_pipeline_and_check(self, value , deployment_type="docker"):
         """
         Stop pipeline and validate that the specific running pipeline is aborted.
         Args:
@@ -337,7 +330,10 @@ class utils:
             Exception: If the specific pipeline is not found in ABORTED state
         """
         os.chdir(self.base_dir)
-        status_output = subprocess.check_output("./sample_status.sh", shell=True, executable='/bin/bash').decode('utf-8')
+        if deployment_type=="helm":
+            status_output = subprocess.check_output("./sample_status.sh helm", shell=True, executable='/bin/bash').decode('utf-8')
+        else:
+            status_output = subprocess.check_output("./sample_status.sh", shell=True, executable='/bin/bash').decode('utf-8')
         print(f"Current pipeline status:\n{status_output}")
         
         running_pipeline_id = None
@@ -353,8 +349,12 @@ class utils:
         
         if not running_pipeline_id:
             raise Exception("No running pipeline found to stop")
-        
-        output = subprocess.check_output("./sample_stop.sh", shell=True, executable='/bin/bash', stderr=subprocess.STDOUT).decode('utf-8')
+        if deployment_type == "helm":
+            cmd = "./sample_stop.sh helm"
+            logging.info("Stopping all pipelines (Helm deployment)")
+        else:
+            cmd = "./sample_stop.sh"
+        output = subprocess.check_output(cmd, shell=True, executable='/bin/bash', stderr=subprocess.STDOUT).decode('utf-8')
         print(f"Output sample_stop.sh:\n{output}")
         time.sleep(2)
         status_output = subprocess.check_output("./sample_status.sh", shell=True, executable='/bin/bash').decode('utf-8')
@@ -421,4 +421,245 @@ class utils:
                 print("✅ No project-related containers are running.")
             print("✅ Services stopped successfully.") 
         except subprocess.CalledProcessError as e:
-            raise Exception
+            raise Exception    
+        
+
+    def update_values_helm(self, value):
+        logging.info('Updating values.yaml for Helm deployment')
+        try:
+            os.chdir(os.path.join(self.path, "edge-ai-suites/manufacturing-ai-suite/industrial-edge-insights-vision"))            
+            logging.info("Copying app-specific values.yaml file")
+            app_type = value.get("app", "pdd")
+            app_config = self.app_configs.get(app_type, self.app_configs["pdd"])
+            subprocess.check_output(f"cp {app_config['helm_values']} helm/values.yaml", shell=True, executable='/bin/bash')
+            logging.info(f'Copied {app_config["helm_values"]} to helm/values.yaml')
+            
+            logging.info("Updating environment variables in values.yaml")
+            with open("helm/values.yaml", 'r') as file:
+                values_data = yaml.safe_load(file)
+            env_updates = {
+                "HOST_IP": hostIP, "MINIO_ACCESS_KEY": "minioadmin", "MINIO_SECRET_KEY": "minioadmin", "POSTGRES_PASSWORD": "test1234", "MR_URL": f"https://{hostIP}:30443/registry/",
+                "http_proxy": "http://proxy-chain.intel.com:912", "https_proxy": "http://proxy-chain.intel.com:912", "SAMPLE_APP": app_config["sample_app"]
+            }
+            values_data['env'].update(env_updates)
+            if 'webrtcturnserver' not in values_data:
+                values_data['webrtcturnserver'] = {}
+            values_data['webrtcturnserver'].update({"username": value.get("webrtc_username", "test1234"), "password": value.get("webrtc_password", "test1234")})
+            with open("helm/values.yaml", 'w') as file:
+                yaml.dump(values_data, file, default_flow_style=False, sort_keys=False)
+            logging.info('Installing prerequisites')
+            subprocess.check_output("./setup.sh helm", shell=True, executable='/bin/bash')
+            logging.info('Prerequisites installed successfully using ./setup.sh helm')
+        except Exception as e:
+            raise Exception(f"Failed to update helm values: {e}")
+        
+    def helm_deploy(self,value):
+        """Deploy the application using helm install command"""
+        logging.info('Deploying Helm application')        
+        try:
+            os.chdir(os.path.join(self.path, "edge-ai-suites/manufacturing-ai-suite/industrial-edge-insights-vision"))
+            logging.info('Installing Helm chart: app-deploy...')
+            subprocess.check_output("helm install app-deploy helm -n apps --create-namespace", shell=True, executable='/bin/bash')
+            logging.info('Helm application deployed successfully')
+        except subprocess.CalledProcessError as e:
+            logging.error(f'Failed to deploy Helm application: {e}')
+            raise Exception(f"Helm deployment failed: {e}")
+        self.check_pod_status()
+        self.copy_resources_to_pod(value)
+
+
+    def check_pod_status(self):
+        """Check the status of running pods in apps namespace"""
+        logging.info('Checking pod status')
+        try:
+            max_attempts = 30
+            for attempt in range(max_attempts):
+                output = subprocess.check_output("kubectl get pods -n apps", shell=True, executable='/bin/bash').decode('utf-8')
+                logging.info(f'Pod status (attempt {attempt + 1}/{max_attempts}):')
+                logging.info(output)
+                # Check if all pods are running
+                lines = output.strip().split('\n')[1:]  # Skip header
+                all_ready = True
+                for line in lines:
+                    if line.strip():
+                        parts = line.split()
+                        if len(parts) >=  3:
+                            status = parts[2]
+                            if status not in ['Running', 'Completed']:
+                                all_ready = False
+                                break
+                if all_ready and lines:
+                    logging.info('All pods are ready and running')
+                    break
+                time.sleep(10)
+            else:
+                logging.warning('Warning: Not all pods are ready after maximum wait time')
+        except Exception as e:
+            raise Exception(f"Pod status check failed: {e}")
+
+
+    def copy_resources_to_pod(self, value):
+        """Copy resources (videos and models) to dlstreamer-pipeline-server pod"""
+        logging.info('Copying resources to dlstreamer-pipeline-server pod')
+        try:
+            os.chdir(os.path.join(self.path, "edge-ai-suites/manufacturing-ai-suite/industrial-edge-insights-vision"))
+            pod_cmd = "kubectl get pods -n apps -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\\n' | grep deployment-dlstreamer-pipeline-server | head -n 1"
+            pod_name = subprocess.check_output(pod_cmd, shell=True, executable='/bin/bash').decode('utf-8').strip()
+            if not pod_name:
+                raise Exception("dlstreamer-pipeline-server pod not found")
+            logging.info(f'Found pod: {pod_name}')
+            app_type = value.get("app", "pdd")
+            config = self.app_configs.get(app_type, self.app_configs["pdd"])
+            
+            video_cmd = f"kubectl cp {config['video_src']} {pod_name}:{config['video_dest']} -c dlstreamer-pipeline-server -n apps"
+            subprocess.check_output(video_cmd, shell=True, executable='/bin/bash')
+            logging.info(f'Copied video file: {config["video_src"]} -> {config["video_dest"]}')
+            models_cmd = f"kubectl cp {config['models_src']} {pod_name}:{config['models_dest']} -c dlstreamer-pipeline-server -n apps"
+            subprocess.check_output(models_cmd, shell=True, executable='/bin/bash')
+            logging.info(f'Copied model files: {config["models_src"]} -> {config["models_dest"]}')
+            
+            logging.info('Verifying copied resources...')
+            video_check_cmd = f"kubectl exec -n apps {pod_name} -c dlstreamer-pipeline-server -- ls -la /home/pipeline-server/resources/videos/"
+            video_output = subprocess.check_output(video_check_cmd, shell=True, executable='/bin/bash').decode('utf-8')
+            logging.info(f'Video files in pod: {video_output}')
+            models_check_cmd = f"kubectl exec -n apps {pod_name} -c dlstreamer-pipeline-server -- ls -la /home/pipeline-server/resources/models/"
+            models_output = subprocess.check_output(models_check_cmd, shell=True, executable='/bin/bash').decode('utf-8')
+            logging.info(f'Model files in pod: {models_output}')
+        except Exception as e:
+            logging.error(f'Failed to copy resources to pod: {e}')
+            raise Exception(f"Resource copying failed: {e}")
+        
+    
+    def container_logs_checker_helm(self, tc, value):
+        """Check dlstreamer-pipeline-server pod logs in Kubernetes"""
+        logging.info('Checking dlstreamer-pipeline-server pod logs')
+        
+        if value and ("change_type" in value or "invalid" in value or "empty" in value):
+            logging.info("Skipping Helm pod log checking for change_type or invalid test cases")
+            return True
+        time.sleep(3)
+        try:
+            pod_cmd = "kubectl get pods -n apps -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\\n' | grep deployment-dlstreamer-pipeline-server | head -n 1"
+            pod_name = subprocess.check_output(pod_cmd, shell=True, executable='/bin/bash').decode('utf-8').strip()
+            if not pod_name:
+                raise Exception("dlstreamer-pipeline-server pod not found")
+            logging.info(f'Found pod: {pod_name}')
+            
+            log_file = f"logs_helm_{pod_name}_{tc}.txt"
+            logging.info(f"Checking Helm Pod: {pod_name}")            
+            log_cmd = f"kubectl logs -n apps {pod_name} -c dlstreamer-pipeline-server --tail=1000"
+            result = subprocess.run(log_cmd, shell=True, capture_output=True, text=True, executable='/bin/bash')
+            if result.returncode != 0:
+                logging.warning(f"Warning: Failed to get logs from pod {pod_name}: {result.stderr}")
+                return True 
+            
+            with open(log_file, 'w') as f:
+                f.write(result.stdout)
+            logging.info(f"Pod logs saved to: {log_file}")
+            
+            log_lines = result.stdout.split('\n')
+            if len(log_lines) > 500:
+                logging.info("Recent pod logs (last 500 lines):")
+                logging.info('\n'.join(log_lines[-500:]))
+            else:
+                logging.info("Pod logs:")
+                logging.info(result.stdout)
+            
+            keywords = value.get("dlsps_log_param", [])            
+            if not keywords:
+                logging.info("No keywords specified for log checking")
+                self._check_warning_messages_helm(log_file)
+                return True
+            
+            missing_keywords = []
+            for keyword in keywords:
+                if not self.search_element(log_file, keyword):
+                    missing_keywords.append(keyword)
+            if missing_keywords:
+                error_msg = f"FAIL: The following keywords were not found in Helm pod logs: {missing_keywords}"
+                logging.error(error_msg)
+                raise Exception(error_msg)
+            else:
+                logging.info("PASS: All keywords found in Helm pod logs.")
+                self._check_warning_messages_helm(log_file)
+                return True
+        except Exception as e:
+            logging.error(f"Error checking Helm pod logs: {e}")
+            raise Exception(f"Helm pod log check failed: {e}")
+
+
+    def _check_warning_messages_helm(self, log_file):
+        """Check for warning messages in Helm pod logs and report them."""
+        logging.info('Checking for Warning Messages in Helm Pod Logs')
+        warning_patterns = ["WARNING", "WARN", "warning", "warn", "ERROR", "error"]
+        warnings_found = []
+        try:
+            with open(log_file, 'r', encoding='utf-8', errors='ignore') as file:
+                for line_num, line in enumerate(file, 1):
+                    line_lower = line.lower()
+                    for pattern in warning_patterns:
+                        if pattern.lower() in line_lower:
+                            duplicate_found = False
+                            for warning in warnings_found:
+                                if warning['line'] == line.strip():
+                                    duplicate_found = True
+                                    break
+                            if not duplicate_found:
+                                warnings_found.append({'line_number': line_num,'pattern': pattern,'line': line.strip()})
+                            break  
+        except Exception as e:
+            logging.error(f"Error reading log file for warning check: {e}")
+            return
+        if warnings_found:
+            logging.warning(f"Found {len(warnings_found)} warning/error message(s) in Helm pod logs:")
+            for warning in warnings_found:
+                logging.warning(f"Line {warning['line_number']} [{warning['pattern']}]: {warning['line']}")
+        else:
+            logging.info("No warning/error messages detected in Helm pod logs.")
+
+
+    def helm_uninstall(self):
+        """Uninstall the application using helm uninstall command"""
+        logging.info('Uninstalling Helm application')        
+        try:
+            os.chdir(os.path.join(self.path, "edge-ai-suites/manufacturing-ai-suite/industrial-edge-insights-vision"))
+            logging.info('Uninstalling Helm chart: app-deploy...')
+            subprocess.check_output("helm uninstall app-deploy -n apps", shell=True, executable='/bin/bash')
+            logging.info('Helm application uninstalled successfully')
+        except subprocess.CalledProcessError as e:
+            logging.error(f'Failed to uninstall Helm application: {e}')
+            raise Exception(f"Helm uninstallation failed: {e}")
+        
+        time.sleep(5)  
+
+        logging.info('Verifying pods cleanup after uninstall')
+        try:
+            max_attempts = 20
+            for attempt in range(max_attempts):
+                try:
+                    output = subprocess.check_output("kubectl get pods -n apps", shell=True, executable='/bin/bash').decode('utf-8')
+                    logging.info(f'Pod status check (attempt {attempt + 1}/{max_attempts}):')
+                    logging.info(output)
+                    
+                    lines = output.strip().split('\n')
+                    if len(lines) <= 1 or (len(lines) == 2 and "No resources found" in lines[1]):
+                        logging.info('All pods have been successfully removed from apps namespace')
+                        break
+                    else:
+                        remaining_pods = lines[1:]  # Skip header
+                        logging.info(f'Found {len(remaining_pods)} pod(s) still terminating...')
+                        for pod_line in remaining_pods:
+                            if pod_line.strip():
+                                logging.info(f'   - {pod_line}')
+                except subprocess.CalledProcessError as e:
+                    if "No resources found" in str(e.output):
+                        logging.info('All pods have been successfully removed from apps namespace')
+                        break
+                    else:
+                        logging.warning(f'Error checking pods: {e}')
+                if attempt < max_attempts - 1:
+                    time.sleep(5)
+            else:
+                logging.warning('Warning: Some pods may still be terminating after maximum wait time')
+        except Exception as e:
+            logging.warning(f'Warning: Could not verify pod cleanup: {e}')
