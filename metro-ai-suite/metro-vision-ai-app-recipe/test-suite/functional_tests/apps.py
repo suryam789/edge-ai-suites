@@ -53,5 +53,5 @@ class TestCaseManager(BaseTest):
     def tearDownClass(cls):
         os.chdir(cls.utils.metro_path)
         subprocess.check_output("git checkout -- .", shell=True, executable='/bin/bash')
-        cls.utils.docker_compose_down()
+        cls.utils.docker_compose_down(cls.value)
         time.sleep(5)
