@@ -261,59 +261,40 @@ class utils:
         
 
     def start_pipeline_and_check(self, value):
-        """
-        Start the sample pipeline(s) for the selected application and validate startup.
-        
-        Supports SP (Smart Parking) and LD (Loitering Detection) applications.
-        For SP: Validates pipeline initialization message.
-        For LD: Extracts and returns response IDs from pipeline startup.
-        
-        Args:
-            value (dict): Configuration dictionary containing app type and other parameters.
-            
-        Returns:
-            None or list: None for SP app, list of response IDs for LD app.
-            
-        Raises:
-            Exception: If pipelines are already running or startup fails.
-        """
         os.chdir(self.metro_path)
         logging.info("Checking pipeline status with sample_status.sh before starting pipeline")
 
-        app = value.get("app")
-        if app not in ("SP", "LD"):
-            if app == "SI":
-                logging.info("SI app - skipping pipeline start. Not yet implemented")
-                return
-            logging.info("Unsupported app type for pipeline start")
-            return
-        # Check current status
-        status_output = subprocess.check_output("./sample_status.sh", shell=True, executable='/bin/bash').decode('utf-8')
-        logging.info(f"sample_status.sh output: {status_output}")
-        if "No running pipelines" not in status_output:
-            raise Exception("Pipelines are already running")
-        logging.info("No pipelines are currently running - ready to start new pipeline")
-        # Start pipelines
-        cmd = "./sample_start.sh"
-        result = subprocess.run(cmd, shell=True, executable='/bin/bash', capture_output=True, text=True)
-        output = result.stdout
-        if app == "SP":
-            success_message = "Pipelines initialized."
-            if success_message not in output:
-                raise Exception(f"Pipeline start failed. Expected message not found: '{success_message}'")
-            return None
-        # app == "LD": extract response IDs
-        response_ids = []
-        for line in output.split('\n'):
-            id_matches = re.findall(r'[0-9a-f]{32}', line)
-            for match in id_matches:
-                if match not in response_ids:
-                    response_ids.append(match)
-        if response_ids:
-            logging.info(f"Found {len(response_ids)} response IDs for LD: {response_ids}")
-            return response_ids
-        logging.error("No response IDs found in LD pipeline start output")
-        raise Exception("LD pipeline start did not return any response IDs")
+        if value.get("app") == "SP" or value.get("app") == "LD":
+                status_output = subprocess.check_output("./sample_status.sh", shell=True, executable='/bin/bash').decode('utf-8')
+                logging.info(f"sample_status.sh output: {status_output}")
+                if "No running pipelines" not in status_output:
+                    raise Exception("Pipelines are already running")
+                logging.info("No pipelines are currently running - ready to start new pipeline")
+                
+                cmd = "./sample_start.sh cpu"
+                
+                # Use subprocess.run to capture both stdout and stderr
+                result = subprocess.run(cmd, shell=True, executable='/bin/bash', 
+                                      capture_output=True, text=True)
+                
+                logging.info(f"sample_start.sh command: {cmd}")
+                logging.info(f"sample_start.sh return code: {result.returncode}")
+                logging.info(f"sample_start.sh stdout: {result.stdout}")
+                if result.stderr:
+                    logging.error(f"sample_start.sh stderr: {result.stderr}")
+                
+                if result.returncode != 0:
+                    raise Exception(f"Pipeline start failed with return code {result.returncode}. Error: {result.stderr}")
+                
+                output = result.stdout
+                success_message = "Pipelines initialized."
+                if success_message not in output:
+                    raise Exception(f"Pipeline start failed. Expected message not found: '{success_message}'")
+        elif value.get("app") == "SI":
+                if value.get("sample_start") is True:
+                    raise Exception("SI app - skipping pipeline start. Not yet implemented")
+                else:
+                    logging.info("SI app - skipping pipeline start. Not yet implemented")
         
 
     def get_pipeline_status(self, value):
