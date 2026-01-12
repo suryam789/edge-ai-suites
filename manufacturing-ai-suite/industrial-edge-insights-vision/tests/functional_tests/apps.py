@@ -16,7 +16,7 @@ class TestCaseManager(BaseTest):
         test_case = os.environ['TEST_CASE']
         key, value = self.utils.json_reader(test_case, JSONPATH)
         self.utils.docker_compose_up(value)
-        time.sleep(3)
+        time.sleep(5)
 
         self.utils.start_pipeline_and_check(value, "docker")
         
