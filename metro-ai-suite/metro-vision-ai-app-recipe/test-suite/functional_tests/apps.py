@@ -48,10 +48,10 @@ class TestCaseManager(BaseTest):
             return
         self.utils.container_logs_checker_dlsps(test_case, value)
         self.utils.stop_pipeline_and_check(value)
+        self.utils.docker_compose_down(value)
 
     @classmethod
     def tearDownClass(cls):
         os.chdir(cls.utils.metro_path)
         subprocess.check_output("git checkout -- .", shell=True, executable='/bin/bash')
-        cls.utils.docker_compose_down(cls.value)
         time.sleep(5)
