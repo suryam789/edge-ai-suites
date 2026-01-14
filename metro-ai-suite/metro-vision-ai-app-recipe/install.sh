@@ -66,6 +66,12 @@ else
     RI_COMPOSE_FILE_ARG="compose-without-scenescape.yml"
 fi
 
+# Check if the compose file exists
+if [ ! -f "$RI_COMPOSE_FILE_ARG" ]; then
+    echo "Error: Compose file $RI_COMPOSE_FILE_ARG not found."
+    exit 1
+fi
+
 # Bring down the application before updating docker compose file
 if docker compose -f "$RI_COMPOSE_FILE_ARG" ps >/dev/null 2>&1; then
     echo "Bringing down any running containers..."
