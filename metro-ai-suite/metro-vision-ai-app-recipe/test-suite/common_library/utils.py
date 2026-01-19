@@ -754,7 +754,6 @@ class utils:
             bool: True if values.yaml was successfully updated, False otherwise.
         """
         try:
-            # Add null check for value parameter
             if value is None:
                 logging.error("Value parameter is None - cannot update values.yaml")
                 return False
@@ -763,16 +762,11 @@ class utils:
             logging.info(f"Changed directory to: {self.metro_path}")
             
             app_type = value.get("app", "")
-            if not app_type:
-                logging.error("App type not specified in value parameter")
-                return False
-                
             app_name = self.app_configs.get(app_type, {}).get("name", "")
             if not app_name:
                 logging.error(f"Invalid app type: {app_type}")
                 return False
                 
-            # Set values_yaml_path based on app type
             values_yaml_path = os.path.join(self.metro_path, app_name, 
                                           "chart" if app_type == "SI" else "helm-chart", "values.yaml")
 
@@ -781,63 +775,44 @@ class utils:
             
             logging.info(f"Updating values.yaml for {app_name}")
             
-            # Read the current values.yaml file
             with open(values_yaml_path, 'r') as file:
                 content = file.read()
-            
+
             if app_type == "SI":
-                # SI configuration with defaults
                 configs = {
-                    'external_ip': value.get("external_ip", hostIP.strip()),
-                    'su_pass': value.get("su_pass", "admin123"),
-                    'pg_pass': value.get("pg_pass", "postgres123"),
+                    'externalIP': value.get("external_ip", hostIP.strip()),
+                    'supass': value.get("su_pass", "admin123"),
+                    'pgpass': value.get("pg_pass", "postgres123"),
                     'no_proxy': value.get("no_proxy", "localhost,127.0.0.1,.local,.cluster.local"),
-                    'device': value.get("device", "CPU").upper()
                 }
-                
-                # Update configurations
-                updates = [
-                    ('externalIP:', f'externalIP: "{configs["external_ip"]}"', r'(\s+)externalIP:.*'),
-                    ('supass:', f'supass: {configs["su_pass"]}', r'supass:.*'),
-                    ('pgpass:', f'pgpass: {configs["pg_pass"]}', r'pgpass:.*'),
-                    ('no_proxy:', f'no_proxy: {configs["no_proxy"]}', r'no_proxy:.*')
-                ]
-                
-                for key, replacement, pattern in updates:
-                    if key in content:
-                        content = re.sub(pattern, replacement if key != 'externalIP:' else f'\\1{replacement.split(": ")[1]}', content)
-                        logging.info(f"Updated {key.rstrip(':')} to: {replacement.split(': ')[1]}")
+                updates = {
+                    'externalIP:': f'externalIP: "{configs["externalIP"]}"',
+                    'supass:': f'supass: {configs["supass"]}',
+                    'pgpass:': f'pgpass: {configs["pgpass"]}',
+                    'no_proxy:': f'no_proxy: {configs["no_proxy"]}',
+                }
             else:
-                # Non-SI configuration with defaults
                 configs = {
-                    'host_ip': value.get("host_ip", hostIP.strip()),
+                    'HOST_IP': value.get("host_ip", hostIP.strip()),
                     'webrtc_username': value.get("webrtc_username", "testuser"),
                     'webrtc_password': value.get("webrtc_password", "testpass"),
-                    'device': value.get("device", "").upper()
                 }
-                
-                # Update configurations
-                updates = [
-                    ('HOST_IP:', f'HOST_IP: {configs["host_ip"]}', r'HOST_IP:.*')
-                ]
-                
-                for key, replacement, pattern in updates:
-                    if key in content:
-                        content = re.sub(pattern, replacement, content)
-                        logging.info(f"Updated {key.rstrip(':')} to: {replacement.split(': ')[1]}")
-                
-                # Update webrtc configuration if present
-                if "webrtcturnserver:" in content:
-                    webrtc_updates = [
-                        ('username:', f'username: {configs["webrtc_username"]}', r'(\s+)username:.*'),
-                        ('password:', f'password: {configs["webrtc_password"]}', r'(\s+)password:.*')
-                    ]
-                    for key, replacement, pattern in webrtc_updates:
-                        if key in content:
-                            content = re.sub(pattern, f'\\1{replacement}', content)
-                            logging.info(f"Updated webrtcturnserver {key.rstrip(':')} to: {replacement.split(': ')[1]}")
-            
-            # Write the updated content back to the file
+                updates = {
+                    'HOST_IP:': f'HOST_IP: {configs["HOST_IP"]}',
+                    'username:': f'username: {configs["webrtc_username"]}',
+                    'password:': f'password: {configs["webrtc_password"]}',
+                }
+
+            for key, new_value in updates.items():
+                pattern = re.compile(f"^{re.escape(key)}.*", re.MULTILINE)
+                if pattern.search(content):
+                    content = pattern.sub(new_value, content)
+                    config_name = key.rstrip(':')
+                    if 'pass' in config_name:
+                        logging.info(f"Updated {config_name} (password hidden for security)")
+                    else:
+                        logging.info(f"Updated {config_name}")
+
             with open(values_yaml_path, 'w') as file:
                 file.write(content)
             
