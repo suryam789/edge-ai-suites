@@ -807,11 +807,6 @@ class utils:
                 pattern = re.compile(f"^{re.escape(key)}.*", re.MULTILINE)
                 if pattern.search(content):
                     content = pattern.sub(new_value, content)
-                    config_name = key.rstrip(':')
-                    if 'pass' in config_name:
-                        logging.info(f"Updated {config_name} (password hidden for security)")
-                    else:
-                        logging.info(f"Updated {config_name}")
 
             with open(values_yaml_path, 'w') as file:
                 file.write(content)
