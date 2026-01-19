@@ -790,15 +790,13 @@ class utils:
             # Get configuration values with defaults
             host_ip = value.get("host_ip", hostIP.strip())
             webrtc_username = value.get("webrtc_username", "testuser")
-            webrtc_password = value.get("webrtc_password", "testpass")
                                 
             if "HOST_IP:" in content:
                 content = re.sub(r'HOST_IP:.*', f'HOST_IP: {host_ip}', content)
             if "webrtcturnserver:" in content:
                 if "username:" in content:
                     content = re.sub(r'(\s+)username:.*', f'\\1username: {webrtc_username}', content)
-                if "password:" in content:
-                    content = re.sub(r'(\s+)password:.*', f'\\1password: {webrtc_password}', content)
+                    content = re.sub(r'(\s+)password:.*', f'\\1password: testpass', content)
         # Write the updated content back to the file
         with open(values_yaml_path, 'w') as file:
             file.write(content)
