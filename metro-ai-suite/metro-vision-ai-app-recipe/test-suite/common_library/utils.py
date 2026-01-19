@@ -934,7 +934,7 @@ class utils:
         Check the status of running pods in the metro application namespace.
         
         Monitors pod status for up to 30 attempts, waiting for all pods to be
-        in Running or Completed state with all containers ready.
+        in Running state with all containers ready.
         
         Args:
             value (dict): Configuration dictionary containing app type for namespace determination.
@@ -968,7 +968,7 @@ class utils:
                     
                     all_ready = all(
                         (lambda parts: len(parts) >= 3 and 
-                         parts[2] in ['Running', 'Completed'] and
+                         parts[2] in ['Running'] and
                          ('/' not in parts[1] or parts[1].split('/')[0] == parts[1].split('/')[1])
                         )(line.split()) if line.strip() else True
                         for line in lines
@@ -980,7 +980,7 @@ class utils:
                             parts = line.split()
                             if len(parts) >= 3:
                                 pod_name, ready_status, status = parts[0], parts[1], parts[2]
-                                if status not in ['Running', 'Completed']:
+                                if status not in ['Running']:
                                     logging.info(f'Pod {pod_name} is not ready: {status} ({ready_status})')
                                 elif '/' in ready_status and ready_status.split('/')[0] != ready_status.split('/')[1]:
                                     logging.info(f'Pod {pod_name} is not fully ready: {ready_status}')
