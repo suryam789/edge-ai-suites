@@ -102,6 +102,7 @@ services:
       
       # Traffic analysis configuration (overrides config/traffic_intelligence.json)
       HIGH_DENSITY_THRESHOLD: ${HIGH_DENSITY_THRESHOLD:-10}
+      MODERATE_DENSITY_THRESHOLD: ${MODERATE_DENSITY_THRESHOLD:-3}
 
     volumes:
       - ../src/config:/app/config:ro
@@ -110,7 +111,7 @@ services:
       - source: root-cert
         target: /app/secrets/certs/scenescape-ca.pem
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8081/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:${TRAFFIC_INTELLIGENCE_PORT:-8081}/health || exit 1"]
       interval: ${HEALTH_CHECK_INTERVAL:-30s}
       timeout: ${HEALTH_CHECK_TIMEOUT:-10s}
       retries: ${HEALTH_CHECK_RETRIES:-3}
