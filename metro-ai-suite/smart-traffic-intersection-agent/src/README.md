@@ -87,7 +87,7 @@ cd traffic-intelligence
 
 2. **Configure environment:**
 ```bash
-cp config/traffic_intelligence.json.example config/traffic_intelligence.json
+cp config/traffic_agent.json.example config/traffic_agent.json
 # Edit configuration for your intersection
 ```
 
@@ -264,7 +264,7 @@ Get/update service configuration parameters.
 
 ### Configuration File
 
-Create `config/traffic_intelligence.json`:
+Create `config/traffic_agent.json`:
 
 ```json
 {
@@ -402,7 +402,7 @@ traffic-intelligence/
 ├── api/                    # REST API endpoints
 │   └── routes.py
 ├── config/                 # Configuration files
-│   └── traffic_intelligence.json
+│   └── traffic_agent.json
 ├── requirements.txt        # Python dependencies
 ├── Dockerfile             # Container build
 ├── docker-compose.yml     # Multi-service deployment

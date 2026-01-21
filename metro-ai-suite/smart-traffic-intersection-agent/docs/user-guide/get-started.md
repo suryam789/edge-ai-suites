@@ -186,7 +186,7 @@ The Scene Intelligence stack uses several configuration files located in the `co
 
 ### Traffic Intersection Agent Configuration
 
-The Traffic Intersection Agent service configuration is at `src/traffic-intelligence/config/traffic_intelligence.json`:
+The Traffic Intersection Agent service configuration is at `src/config/traffic_agent.json`:
 
 ```json
 {
@@ -351,7 +351,7 @@ Validate configuration files:
 
 ```bash
 # Check JSON syntax
-cat src/traffic-intelligence/config/traffic_intelligence.json | jq .
+cat src/config/traffic_agent.json | jq .
 cat config/scene_intelligence_config.json | jq .
 
 # Verify mounted configuration

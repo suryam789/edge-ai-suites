@@ -582,7 +582,7 @@ Environment variables take precedence over configuration file values in the foll
 ### Development Environment
 
 ```bash
-export SMART_INTELLIGENCE_CONFIG_PATH="./config/traffic_intelligence.json"
+export SMART_INTELLIGENCE_CONFIG_PATH="./config/traffic_agent.json"
 export VLM_CONFIG_PATH="./config/vlm_config.json"
 export MQTT_BROKER_HOST="localhost"
 export MQTT_BROKER_PORT=1883
@@ -594,7 +594,7 @@ export VLM_WORKERS=1
 ### Production Environment
 
 ```bash
-export SMART_INTELLIGENCE_CONFIG_PATH="/app/config/traffic_intelligence.json"
+export SMART_INTELLIGENCE_CONFIG_PATH="/app/config/traffic_agent.json"
 export VLM_CONFIG_PATH="/app/config/vlm_config.json"
 export MQTT_BROKER_HOST="mqtt-broker.production.com"
 export MQTT_BROKER_PORT=1883
