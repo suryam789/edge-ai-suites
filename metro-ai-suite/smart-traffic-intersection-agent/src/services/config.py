@@ -36,7 +36,7 @@ class ConfigService:
         config = {}
         
         # Load from config file if specified
-        config_file = os.getenv("TRAFFIC_INTELLIGENCE_CONFIG", "config/traffic_intelligence.json")
+        config_file = os.getenv("TRAFFIC_INTELLIGENCE_CONFIG", "config/traffic_agent.json")
         if os.path.exists(config_file):
             try:
                 with open(config_file, 'r') as f:
