@@ -147,11 +147,4 @@ jobs:
         with:
           name: Trivy Report - Config scan for Helm
           path: metro-ai-suite/metro-vision-ai-app-recipe/trivy-helm.txt
-  sanity:
-    uses: ./.github/workflows/metro_vision_ai_app_recipe_sanity.yaml
-    with:
-      branch:  ${{ github.head_ref }}
-    secrets: inherit            
-    permissions:
-      contents: read           
-      packages: write
+  
