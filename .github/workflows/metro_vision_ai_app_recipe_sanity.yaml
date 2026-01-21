@@ -1,4 +1,4 @@
-name: "[industrial-edge-insights-vision] Sanity Workflow"
+name: "[metro-vision-ai-app-recipe]  Sanity Workflow"
 
 on:
   workflow_dispatch:      # allows manual trigger
@@ -59,7 +59,8 @@ jobs:
        sudo pip install robotframework
        lspci | grep -i vga
        sudo apt install -y python3-nose libxml2-utils vlc
-       cd edge-ai-suites-repo/manufacturing-ai-suite/industrial-edge-insights-vision/tests/robot_files
+       sudo pip install selenium
+       cd edge-ai-suites-repo/metro-ai-suite/metro-vision-ai-app-recipe/test-suite/robot_files
        robot test.robot || true  &
        sleep 480
        docker logs dlstreamer-pipeline-server >> dlsps_logs.txt &
@@ -82,13 +83,13 @@ jobs:
        sudo pip install robotframework
        lspci | grep -i vga
        sudo apt install -y python3-nose libxml2-utils vlc
-       cd edge-ai-suites-repo/manufacturing-ai-suite/industrial-edge-insights-vision/tests/robot_files
+       cd edge-ai-suites-repo/metro-ai-suite/metro-vision-ai-app-recipe/test-suite/robot_files
        robot test_helm.robot || true  &
        sleep 480
        docker logs dlstreamer-pipeline-server >> dlsps_logs.txt &
        wait
-       mkdir -p /tmp/test_results
-       cp -r report.html log.html output.xml dlsps_logs.txt /tmp/test_results/
+       mkdir -p /tmp/test_results/Helm
+       cp -r report.html log.html output.xml dlsps_logs.txt /tmp/test_results/Helm
        passed=$(xmllint --xpath "//return/status[@status='PASS']" ./output.xml | wc -l) || true
        failed=$(xmllint --xpath "//return/status[@status='FAIL']" ./output.xml | wc -l) || true
        not_run=$(xmllint --xpath "//return/status[@status='NOT RUN']" ./output.xml | wc -l) || true
@@ -107,7 +108,7 @@ jobs:
     - name: Clean up
       if: always()
       run: |
-        sudo rm -rf edge-ai-libraries-repo
+        sudo rm -rf edge-ai-suites-repo
         if [ -n "$(docker images -aq)" ]; then
                docker rmi -f $(docker images -aq) || true
         fi
