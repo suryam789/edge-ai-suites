@@ -17,6 +17,7 @@ class TestCaseManager(BaseTest):
         key, value = self.utils.json_reader(test_case, JSONPATH)
         self.utils.update_values_helm(value)
         self.utils.helm_deploy(value)
+        time.sleep(5)
         self.utils.start_pipeline_and_check(value, "helm")
         self.utils.list_pipelines(value, "helm")
 
