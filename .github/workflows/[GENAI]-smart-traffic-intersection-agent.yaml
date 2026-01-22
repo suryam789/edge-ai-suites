@@ -42,7 +42,7 @@ jobs:
       - name: Build Docker images
         run: |
           cd metro-ai-suite/smart-traffic-intersection-agent/
-          docker build -t smart-traffic-intersection-agent:latest -f docker/Dockerfile .
+          docker build -t smart-traffic-intersection-agent:latest -f src/Dockerfile .
          
       - name: Run trivy Scan - smart-traffic-intersection-agent
         uses: open-edge-platform/orch-ci/.github/actions/security/trivy@27276444a9bcf247a27369406686b689933bd1ff
@@ -59,7 +59,7 @@ jobs:
         uses: open-edge-platform/orch-ci/.github/actions/security/trivy@27276444a9bcf247a27369406686b689933bd1ff
         with:
           scan_type: "config"
-          scan_target: "edge-ai-suites-repo/metro-ai-suite/smart-traffic-intersection-agent/docker"
+          scan_target: "edge-ai-suites-repo/metro-ai-suite/smart-traffic-intersection-agent/src"
           severity: "HIGH,CRITICAL"
           format: "json"
           misconfig_scanners: "Dockerfile"
