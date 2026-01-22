@@ -41,8 +41,8 @@ jobs:
       
       - name: Build Docker images
         run: |
-          cd metro-ai-suite/smart-traffic-intersection-agent/
-          docker build -t smart-traffic-intersection-agent:latest -f src/Dockerfile .
+          cd metro-ai-suite/smart-traffic-intersection-agent/src/
+          docker build -t smart-traffic-intersection-agent:latest -f Dockerfile .
          
       - name: Run trivy Scan - smart-traffic-intersection-agent
         uses: open-edge-platform/orch-ci/.github/actions/security/trivy@27276444a9bcf247a27369406686b689933bd1ff
