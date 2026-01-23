@@ -35,7 +35,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
           path: edge-ai-suites-repo
-          ref:"sowmya/metro_ci_job"
+          ref: sowmya/metro_ci_job
 
       - name: Set up Python
         uses: actions/setup-python@v5
