@@ -75,9 +75,14 @@ jobs:
     - name: Sanity Test 
       run: | 
        sudo apt-get update
-       sudo pip install robotframework
+       
        lspci | grep -i vga
        sudo apt install -y python3-nose libxml2-utils vlc
+
+       python3 -m venv venv
+       source venv/bin/activate
+       pip install --upgrade pip
+       pip install robotframework
        cd edge-ai-suites-repo/manufacturing-ai-suite/industrial-edge-insights-vision/tests/robot_files
        robot test.robot || true  &
        sleep 480
@@ -98,9 +103,14 @@ jobs:
     - name: Helm Sanity Test 
       run: | 
        sudo apt-get update
-       sudo pip install robotframework
+       
        lspci | grep -i vga
        sudo apt install -y python3-nose libxml2-utils vlc
+       python3 -m venv venv
+       source venv/bin/activate
+       pip install --upgrade pip
+       pip install robotframework
+       
        cd edge-ai-suites-repo/manufacturing-ai-suite/industrial-edge-insights-vision/tests/robot_files
        robot test_helm.robot || true  &
        sleep 480
