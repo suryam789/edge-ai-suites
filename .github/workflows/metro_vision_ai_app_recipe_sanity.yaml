@@ -69,13 +69,13 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Install Robot Framework with pip (cached)
         run: pip install robotframework
-
-      - name: Sanity Test
+      - name: Install required packages
         run: |
           sudo apt-get update
+          sudo apt-get install -y python3-nose libxml2-utils vlc
+      - name: Sanity Test
+        run: |
           
-          lspci | grep -i vga
-          sudo apt install -y python3-nose libxml2-utils vlc
           
           cd edge-ai-suites-repo/metro-ai-suite/metro-vision-ai-app-recipe/test-suite/robot_files
           robot test.robot || true  &
