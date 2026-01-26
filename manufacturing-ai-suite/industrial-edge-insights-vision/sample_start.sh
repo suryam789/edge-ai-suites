@@ -16,26 +16,117 @@ PIPELINE_ROOT="user_defined_pipelines" # Default root directory for pipelines
 PIPELINE="all"                         # Default to running all pipelines
 PAYLOAD_COPIES=1                       # Default to running a single copy of the payloads
 DEPLOYMENT_TYPE=""                     # Default deployment type (empty for existing flow)
+CONFIG_FILE="$SCRIPT_DIR/config.yml"
+
+#Function to parse config.yml if it is present and extract SAMPLE_APP and INSTANCE_ID
+parse_config_yml() {
+    if [[ ! -f "$CONFIG_FILE" ]]; then
+        err "Config file $CONFIG_FILE not found."
+        exit 1
+    fi
+    
+    awk '
+    BEGIN { 
+        sample_app = ""
+        instance_name = ""
+    }
+    /^[[:space:]]*$/ { next }
+    /^[[:space:]]*#/ { next }
+    
+    /^[a-zA-Z_][a-zA-Z0-9_-]*:/ {
+        sample_app = $1
+        gsub(/:/, "", sample_app)
+        next
+    }
+    
+    /^  [a-zA-Z_][a-zA-Z0-9_-]*:/ {
+        instance_name = $1
+        gsub(/^[[:space:]]+/, "", instance_name)
+        gsub(/:/, "", instance_name)
+        if (sample_app != "" && instance_name != "") {
+            print sample_app "|" instance_name
+        }
+    }
+    ' "$CONFIG_FILE"
+}
+
+# Get SAMPLE_APP for a given INSTANCE_NAME
+get_sample_app() {
+    if [[ -z "$INSTANCE_NAME" ]]; then
+        err "INSTANCE_NAME not set"
+        exit 1
+    fi
+    
+    SAMPLE_APP=$(awk -v inst="$INSTANCE_NAME" '
+    BEGIN { 
+        sample_app = ""
+        found = 0
+    }
+    /^[[:space:]]*$/ { next }
+    /^[[:space:]]*#/ { next }
+    
+    /^[a-zA-Z_][a-zA-Z0-9_-]*:/ {
+        sample_app = $1
+        gsub(/:/, "", sample_app)
+        next
+    }
+    
+    /^  [a-zA-Z_][a-zA-Z0-9_-]*:/ {
+        instance_name = $1
+        gsub(/^[[:space:]]+/, "", instance_name)
+        gsub(/:/, "", instance_name)
+        if (instance_name == inst) {
+            print sample_app
+            found = 1
+            exit
+        }
+    }
+    
+    END {
+        if (!found) {
+            exit 1
+        }
+    }
+    ' "$CONFIG_FILE")
+    
+    if [[ $? -ne 0 || -z "$SAMPLE_APP" ]]; then
+        err "INSTANCE_NAME '$INSTANCE_NAME' not found in $CONFIG_FILE"
+        exit 1
+    fi
+    
+    echo "Found SAMPLE_APP: $SAMPLE_APP for INSTANCE_NAME: $INSTANCE_NAME"
+}
+
+get_dir(){
+    # if config.yml exists and INSTANCE_NAME is set
+    # get SAMPLE_APP for this INSTANCE_NAME
+    # set a variable ENV_PATH to point to the .env file for this instance and call init 
+    if [[ -f "$CONFIG_FILE" && -n "$INSTANCE_NAME" ]]; then
+        get_sample_app
+        ENV_PATH="$SCRIPT_DIR/temp_apps/$SAMPLE_APP/$INSTANCE_NAME/.env"
+        init
+    # if config.yml exists and INSTANCE_NAME is not set
+    # parse config.yml to get SAMPLE_APP and INSTANCE_NAME and recursively call get_dir for each instance and init without calling get_sample_app as it is available in config.yml
+    elif [[ -f "$CONFIG_FILE" && -z "$INSTANCE_NAME" ]]; then
+        while IFS='|' read -r sample_app instance_name; do
+            ENV_PATH="$SCRIPT_DIR/temp_apps/$sample_app/$instance_name/.env"
+            init
+        done < <(parse_config_yml)
+    # else if config.yml does not exist then load .env from SCRIPT_DIR and call init
+    else
+        ENV_PATH="$SCRIPT_DIR/.env"
+        init
+    fi
+}
 
 init() {
-    # if INSTANCE_NAME is set, set APP_DIR accordingly, and load env from there
-    if [[ -n "$INSTANCE_NAME" ]]; then
-        APP_DIR="$SCRIPT_DIR/temp_apps/$SAMPLE_APP/$INSTANCE_NAME"
-        echo "Using instance: $INSTANCE_NAME"
-        # load environment variables from instance .env file
-        if [[ -f "$APP_DIR/.env" ]]; then
-            export $(grep -v -E '^\s*#' "$APP_DIR/.env" | sed -e 's/#.*$//' -e '/^\s*$/d' | xargs)
-            echo "Environment variables loaded from $APP_DIR/.env"
-        fi
+    # load environment variables from .env file if it exists
+    if [[ -f "$ENV_PATH" ]]; then
+        export $(grep -v -E '^\s*#' "$ENV_PATH" | sed -e 's/#.*$//' -e '/^\s*$/d' | xargs)
+        echo "Environment variables loaded from $ENV_PATH"
     else
-        # load environment variables from .env file if it exists
-        if [[ -f "$SCRIPT_DIR/.env" ]]; then
-            export $(grep -v -E '^\s*#' "$SCRIPT_DIR/.env" | sed -e 's/#.*$//' -e '/^\s*$/d' | xargs)
-            echo "Environment variables loaded from $SCRIPT_DIR/.env"
-        else
-            err "No .env file found in $SCRIPT_DIR"
-            exit 1
-        fi
+        err "No .env file found in $ENV_PATH"
+        exit 1
     fi
 
     # check if SAMPLE_APP is set
@@ -56,7 +147,7 @@ init() {
         CURL_HOST_IP="${HOST_IP}:30443"
         echo "Using Helm deployment - curl commands will use: $CURL_HOST_IP"
     else
-        CURL_HOST_IP="$HOST_IP"
+        CURL_HOST_IP="$HOST_IP:$NGINX_HTTPS_PORT"
         echo "Using default deployment - curl commands will use: $CURL_HOST_IP"
     fi
 }
@@ -143,11 +234,62 @@ launch_pipeline() {
 
 start_pipelines() {
     # initialize the sample app, load env
-    init
-    # check if dlstreamer-pipeline-server is running
-    get_status
-    # load the payload
-    load_payload
+    # get directory for the .env file based on whether config.yml and INSTANCE_NAME is present or not
+    # if config.yml exists and INSTANCE_NAME is set
+    # get SAMPLE_APP for this INSTANCE_NAME
+    # set a variable ENV_PATH to point to the .env file for this instance and call init 
+    if [[ -f "$CONFIG_FILE" && -n "$INSTANCE_NAME" ]]; then
+        get_sample_app
+        ENV_PATH="$SCRIPT_DIR/temp_apps/$SAMPLE_APP/$INSTANCE_NAME/.env"
+        init
+        
+        # check if dlstreamer-pipeline-server is running
+        get_status
+        # load the payload
+        load_payload
+    # if config.yml exists and INSTANCE_NAME is not set
+    # Process all instances from config.yml
+    elif [[ -f "$CONFIG_FILE" && -z "$INSTANCE_NAME" ]]; then
+        while IFS='|' read -r sample_app instance_name; do
+            echo ""
+            echo "=========================================="
+            echo "Processing instance: $instance_name (SAMPLE_APP: $sample_app)"
+            echo "=========================================="
+            
+            ENV_PATH="$SCRIPT_DIR/temp_apps/$sample_app/$instance_name/.env"
+            init
+            
+            # check if dlstreamer-pipeline-server is running
+            get_status
+            # load the payload
+            load_payload
+
+            # If no arguments are provided, start only the first pipeline
+            if [[ -z "$1" ]]; then
+                first_pipeline=$(echo "$ALL_PIPELINES_IN_PAYLOAD" | jq -r '.[0].pipeline')
+                echo "Starting first pipeline for $instance_name: $first_pipeline"
+                launch_pipeline "$first_pipeline"
+            else
+                # Start specified pipelines
+                for pipeline in "$@"; do
+                    if [[ -n "$pipeline" && ! "$pipeline" =~ ^- ]]; then
+                        echo "Starting pipeline for $instance_name: $pipeline"
+                        launch_pipeline "$pipeline"
+                    fi
+                done
+            fi
+        done < <(parse_config_yml)
+        return
+    # else if config.yml does not exist then load .env from SCRIPT_DIR and call init
+    else
+        ENV_PATH="$SCRIPT_DIR/.env"
+        init
+        
+        # check if dlstreamer-pipeline-server is running
+        get_status
+        # load the payload
+        load_payload
+    fi
 
     # If no arguments are provided, start only the first pipeline
     if [[ -z "$1" ]]; then
@@ -203,6 +345,39 @@ usage() {
     echo "  -n, --payload-copies            Run copies of the payloads for pipeline(s)."
     echo "                                  Any frame rtsp path or webrtc peer-id in payload will be incremented."
     echo "  -h, --help                      Show this help message"
+}
+
+
+get_sample_app(){
+    SAMPLE_APP=$(awk -v instance="$INSTANCE_NAME" '
+    BEGIN { sample_app = "" }
+    /^[[:space:]]*$/ { next }
+    /^[[:space:]]*#/ { next }
+    
+    /^[a-zA-Z_][a-zA-Z0-9_-]*:/ {
+        current_app = $1
+        gsub(/:/, "", current_app)
+        next
+    }
+    
+    /^  [a-zA-Z_][a-zA-Z0-9_-]*:/ {
+        instance_name = $1
+        gsub(/^[[:space:]]+/, "", instance_name)
+        gsub(/:/, "", instance_name)
+        if (instance_name == instance) {
+            sample_app = current_app
+            print sample_app
+            exit
+        }
+    }
+    ' "$CONFIG_FILE")
+    
+    if [[ -z "$SAMPLE_APP" ]]; then
+        err "Instance '$INSTANCE_NAME' not found in config file."
+        exit 1
+    else
+        echo "Found SAMPLE_APP: $SAMPLE_APP for INSTANCE_NAME: $INSTANCE_NAME"
+    fi
 }
 
 main() {
@@ -321,6 +496,12 @@ main() {
                 ;;
         esac
     done
+    
+    # If we reach here, check if INSTANCE_NAME was set but no other action was taken
+    if [[ -n "$INSTANCE_NAME" ]]; then
+        echo "Starting pipelines for instance: $INSTANCE_NAME"
+        start_pipelines
+    fi
     
 
 
