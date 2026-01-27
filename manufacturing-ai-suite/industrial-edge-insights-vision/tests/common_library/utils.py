@@ -246,11 +246,12 @@ class utils:
                     if deployment_type=="helm":
                         output = subprocess.check_output(f"./sample_start.sh helm -p {pipeline_name}", shell=True, executable='/bin/bash', stderr=subprocess.STDOUT)
                     else:
-                        output = subprocess.check_output(f"./sample_start.sh -p {pipeline_name}", shell=True, executable='/bin/bash')
+                        output = subprocess.check_output(f"./sample_start.sh -p {pipeline_name}", shell=True, executable='/bin/bash', stderr=subprocess.STDOUT)
                     logging.info(f"Using configured pipeline: {pipeline_name}")
                 else:
                     output = subprocess.check_output("./sample_start.sh", shell=True, executable='/bin/bash', stderr=subprocess.STDOUT)
             except subprocess.CalledProcessError as e:
+                logging.error(f"Error executing sample_start.sh: {e.output.decode('utf-8')}")
                 raise e
             output = output.decode('utf-8')
             logging.info(f"sample_start.sh output: {output}")
