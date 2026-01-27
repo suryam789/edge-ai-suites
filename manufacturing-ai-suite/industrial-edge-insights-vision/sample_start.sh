@@ -97,27 +97,6 @@ get_sample_app() {
     echo "Found SAMPLE_APP: $SAMPLE_APP for INSTANCE_NAME: $INSTANCE_NAME"
 }
 
-get_dir(){
-    # if config.yml exists and INSTANCE_NAME is set
-    # get SAMPLE_APP for this INSTANCE_NAME
-    # set a variable ENV_PATH to point to the .env file for this instance and call init 
-    if [[ -f "$CONFIG_FILE" && -n "$INSTANCE_NAME" ]]; then
-        get_sample_app
-        ENV_PATH="$SCRIPT_DIR/temp_apps/$SAMPLE_APP/$INSTANCE_NAME/.env"
-        init
-    # if config.yml exists and INSTANCE_NAME is not set
-    # parse config.yml to get SAMPLE_APP and INSTANCE_NAME and recursively call get_dir for each instance and init without calling get_sample_app as it is available in config.yml
-    elif [[ -f "$CONFIG_FILE" && -z "$INSTANCE_NAME" ]]; then
-        while IFS='|' read -r sample_app instance_name; do
-            ENV_PATH="$SCRIPT_DIR/temp_apps/$sample_app/$instance_name/.env"
-            init
-        done < <(parse_config_yml)
-    # else if config.yml does not exist then load .env from SCRIPT_DIR and call init
-    else
-        ENV_PATH="$SCRIPT_DIR/.env"
-        init
-    fi
-}
 
 init() {
     # load environment variables from .env file if it exists
@@ -247,7 +226,7 @@ launch_pipeline() {
 
 }
 
-# Helper function to launch pipelines based on arguments
+# Function to launch pipelines based on arguments
 launch_pipelines_from_args() {
     # If no arguments are provided, start only the first pipeline
     if [[ -z "$1" ]]; then
