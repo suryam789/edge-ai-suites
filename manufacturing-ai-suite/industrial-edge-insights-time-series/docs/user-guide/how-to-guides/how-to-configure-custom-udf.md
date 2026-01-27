@@ -13,6 +13,7 @@ This guide provides instructions for setting up custom UDF deployment package (U
   1. **`udfs/`**:
      - Contains python scripts for UDFs.
      - If additional python packages are required, list them in `requirements.txt` using pinned versions.
+     - For detailed instructions on writing UDFs, see the [How to Write a UDF](./how-to-write-a-udf.md) guide.
 
   2. **`tick_scripts/`**:
      - Contains TICKscripts for data processing, analytics, and alerts.
@@ -100,3 +101,4 @@ and config.json has been volume mounted for the Time Series Analytics Microservi
     ```
 
 For more details, refer `Time Series Analytics` microservice API docs [here](./how-to-update-config.md#how-to-update-config-in-time-series-analytics-microservice).
+
