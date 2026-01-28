@@ -14,7 +14,7 @@ concurrency:
 on:
   pull_request:
     branches:
-      - smart-traffic-workflow
+      - main
     paths:
       - 'metro-ai-suite/smart-traffic-intersection-agent/**'
 
