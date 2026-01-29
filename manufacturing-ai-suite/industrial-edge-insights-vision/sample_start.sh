@@ -454,6 +454,7 @@ main() {
                 ;;
         esac
     done
+    start_pipelines
     
 
 
