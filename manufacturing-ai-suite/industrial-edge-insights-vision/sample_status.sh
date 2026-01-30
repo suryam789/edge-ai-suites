@@ -54,7 +54,7 @@ init() {
     fi
 }
 
-#Function to parse config.yml if it is present and extract SAMPLE_APP and INSTANCE_ID
+# Function to parse config.yml and extract SAMPLE_APP, INSTANCE_NAME, and their key-value pairs
 parse_config_yml() {
     if [[ ! -f "$CONFIG_FILE" ]]; then
         err "Config file $CONFIG_FILE not found."
@@ -86,7 +86,7 @@ parse_config_yml() {
     ' "$CONFIG_FILE"
 }
 
-# Get SAMPLE_APP for a given INSTANCE_NAME
+# Function to get SAMPLE_APP for a given INSTANCE_NAME from config.yml
 get_sample_app() {
     if [[ -z "$INSTANCE_NAME" ]]; then
         err "INSTANCE_NAME not set"
@@ -168,15 +168,7 @@ get_status_all() {
     fi
 }
 
-# Function to do the following:
-# 1. Check if INSTANCE_NAME is set, if set get SAMPLE_APP for the given INSTANCE_NAME from config.yml
-# 2. Set ENV_PATH based on SAMPLE_APP and INSTANCE_NAME
-# 3. Call init function to load environment variables
-# 4. Check if INSTANCE_ID is set, if set call get_status_instance function with INSTANCE_ID by going through each id
-# 5. If INSTANCE_ID is not set, call get_status_all function to get status of all pipeline instances associated with the given INSTANCE_NAME
-# 6. If INSTANCE_NAME is not set, and INSTANCE_ID is set, call get_status_instance function with INSTANCE_ID by going through each id
-# 7. If neither INSTANCE_NAME nor INSTANCE_ID is set, call get_status_all function
-
+# Function to get status based on flags
 get_status_flag() {
     if [[ -f "$CONFIG_FILE" && -n "$INSTANCE_NAME" ]]; then
         get_sample_app
@@ -217,8 +209,6 @@ get_status_flag() {
 }
 
 
-
-
 err() {
     echo "ERROR: $*" >&2
 }
@@ -229,6 +219,7 @@ usage() {
     echo "  helm                            For Helm deployment (adds :30443 port to HOST_IP for curl commands)"
     echo "Options:"
     echo "  --all                           Get status of all pipelines instances (default)"
+    echo "  -i, --instance <instance_name>  Get status of pipeline instance(s) for a specified INSTANCE_NAME from config.yml"
     echo "  -i, --id <instance_id>          Get status of a specified pipeline instance(s)"
     echo "  -h, --help                      Show this help message"
 }

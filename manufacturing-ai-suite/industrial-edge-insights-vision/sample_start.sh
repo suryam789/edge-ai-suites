@@ -16,9 +16,53 @@ PIPELINE_ROOT="user_defined_pipelines" # Default root directory for pipelines
 PIPELINE="all"                         # Default to running all pipelines
 PAYLOAD_COPIES=1                       # Default to running a single copy of the payloads
 DEPLOYMENT_TYPE=""                     # Default deployment type (empty for existing flow)
-CONFIG_FILE="$SCRIPT_DIR/config.yml"
+CONFIG_FILE="$SCRIPT_DIR/config.yml"   # Config file path for multiple instances
 
-#Function to parse config.yml if it is present and extract SAMPLE_APP and INSTANCE_ID
+init() {
+    # load environment variables from .env file if it exists
+    if [[ -f "$ENV_PATH" ]]; then
+        export $(grep -v -E '^\s*#' "$ENV_PATH" | sed -e 's/#.*$//' -e '/^\s*$/d' | xargs)
+        echo "Environment variables loaded from $ENV_PATH"
+    else
+        err "No .env file found in $ENV_PATH"
+        exit 1
+    fi
+
+    # check if SAMPLE_APP is set
+    if [[ -z "$SAMPLE_APP" ]]; then
+        err "SAMPLE_APP environment variable is not set."
+        exit 1
+    else
+        echo "Running sample app: $SAMPLE_APP"
+    fi
+    # check if APP_DIR directory exists
+    if [[ ! -d "$APP_DIR" ]]; then
+        err "APP_DIR directory $APP_DIR does not exist."
+        exit 1
+    fi
+
+    # Set the appropriate HOST_IP with port for curl commands based on deployment type
+    # IF config.yml file exists, then set CURL_HOST_IP as HOST_IP:NGINX_HTTPS_PORT otherwise set CURL_HOST_IP as HOST_IP:30443 for helm deployment and HOST_IP for default 
+    if [[ -f "$CONFIG_FILE" ]]; then
+        if [[ "$DEPLOYMENT_TYPE" == "helm" ]]; then
+            CURL_HOST_IP="${HOST_IP}:30443"
+            echo "Using Helm deployment - curl commands will use: $CURL_HOST_IP"
+        else
+            CURL_HOST_IP="$HOST_IP:$NGINX_HTTPS_PORT"
+            echo "Using default deployment - curl commands will use: $CURL_HOST_IP"
+        fi
+    else
+        if [[ "$DEPLOYMENT_TYPE" == "helm" ]]; then
+            CURL_HOST_IP="${HOST_IP}:30443"
+            echo "Using Helm deployment - curl commands will use: $CURL_HOST_IP"
+        else
+            CURL_HOST_IP="$HOST_IP"
+            echo "Using default deployment - curl commands will use: $CURL_HOST_IP"
+        fi
+    fi
+}
+
+# Function to parse config.yml and extract SAMPLE_APP, INSTANCE_NAME, and their key-value pairs
 parse_config_yml() {
     if [[ ! -f "$CONFIG_FILE" ]]; then
         err "Config file $CONFIG_FILE not found."
@@ -50,8 +94,8 @@ parse_config_yml() {
     ' "$CONFIG_FILE"
 }
 
-# Get SAMPLE_APP for a given INSTANCE_NAME
 get_sample_app() {
+    # Function to get SAMPLE_APP for a given INSTANCE_NAME from config.yml
     if [[ -z "$INSTANCE_NAME" ]]; then
         err "INSTANCE_NAME not set"
         exit 1
@@ -97,50 +141,6 @@ get_sample_app() {
     echo "Found SAMPLE_APP: $SAMPLE_APP for INSTANCE_NAME: $INSTANCE_NAME"
 }
 
-
-init() {
-    # load environment variables from .env file if it exists
-    if [[ -f "$ENV_PATH" ]]; then
-        export $(grep -v -E '^\s*#' "$ENV_PATH" | sed -e 's/#.*$//' -e '/^\s*$/d' | xargs)
-        echo "Environment variables loaded from $ENV_PATH"
-    else
-        err "No .env file found in $ENV_PATH"
-        exit 1
-    fi
-
-    # check if SAMPLE_APP is set
-    if [[ -z "$SAMPLE_APP" ]]; then
-        err "SAMPLE_APP environment variable is not set."
-        exit 1
-    else
-        echo "Running sample app: $SAMPLE_APP"
-    fi
-    # check if APP_DIR directory exists
-    if [[ ! -d "$APP_DIR" ]]; then
-        err "APP_DIR directory $APP_DIR does not exist."
-        exit 1
-    fi
-
-    # Set the appropriate HOST_IP with port for curl commands based on deployment type
-    # IF config.yml file exists, then set CURL_HOST_IP as HOST_IP:NGINX_HTTPS_PORT otherwise set CURL_HOST_IP as HOST_IP:30443 for helm deployment and HOST_IP for default 
-    if [[ -f "$CONFIG_FILE" ]]; then
-        if [[ "$DEPLOYMENT_TYPE" == "helm" ]]; then
-            CURL_HOST_IP="${HOST_IP}:30443"
-            echo "Using Helm deployment - curl commands will use: $CURL_HOST_IP"
-        else
-            CURL_HOST_IP="$HOST_IP:$NGINX_HTTPS_PORT"
-            echo "Using default deployment - curl commands will use: $CURL_HOST_IP"
-        fi
-    else
-        if [[ "$DEPLOYMENT_TYPE" == "helm" ]]; then
-            CURL_HOST_IP="${HOST_IP}:30443"
-            echo "Using Helm deployment - curl commands will use: $CURL_HOST_IP"
-        else
-            CURL_HOST_IP="$HOST_IP"
-            echo "Using default deployment - curl commands will use: $CURL_HOST_IP"
-        fi
-    fi
-}
 
 load_payload() {
     # Load all pipelines payload
@@ -191,7 +191,7 @@ launch_pipeline() {
     # Function to fetch payload for a specific pipeline and post it.
     # If the pipeline has multiple payloads, it will post each one.
     # If PAYLOAD_COPIES is set, it will create copies of every payload and
-    #   increment the rtsp path or peer-id in the copied payload.
+    # increment the rtsp path or peer-id in the copied payload.
     local PIPELINE="$1"
     echo "Launching pipeline: $PIPELINE"
     # Extract the payload for the specific pipeline
@@ -253,54 +253,48 @@ launch_pipelines_from_args() {
 
 start_pipelines() {
     # initialize the sample app, load env
-    # get directory for the .env file based on whether config.yml and INSTANCE_NAME is present or not
     # if config.yml exists and INSTANCE_NAME is set
-    # get SAMPLE_APP for this INSTANCE_NAME
-    # set a variable ENV_PATH to point to the .env file for this instance and call init 
     if [[ -f "$CONFIG_FILE" && -n "$INSTANCE_NAME" ]]; then
         get_sample_app
         ENV_PATH="$SCRIPT_DIR/temp_apps/$SAMPLE_APP/$INSTANCE_NAME/.env"
         init
-        
         # check if dlstreamer-pipeline-server is running
         get_status
         # load the payload
         load_payload
-        
         # Launch pipelines based on arguments
         launch_pipelines_from_args "$@"
         return
+
     # if config.yml exists and INSTANCE_NAME is not set
     # Process all instances from config.yml
     elif [[ -f "$CONFIG_FILE" && -z "$INSTANCE_NAME" ]]; then
         while IFS='|' read -r sample_app instance_name; do
             echo ""
-            echo "=========================================="
-            echo "Processing instance: $instance_name (SAMPLE_APP: $sample_app)"
-            echo "=========================================="
+            echo "------------------------------------------"
+            echo "Processing instance: $instance_name from SAMPLE_APP: $sample_app"
+            echo "------------------------------------------"
             
             ENV_PATH="$SCRIPT_DIR/temp_apps/$sample_app/$instance_name/.env"
             init
-            
             # check if dlstreamer-pipeline-server is running
             get_status
             # load the payload
             load_payload
-
             # Launch pipelines based on arguments
             launch_pipelines_from_args "$@"
         done < <(parse_config_yml)
         return
-    # else if config.yml does not exist then load .env from SCRIPT_DIR and call init
+
+    # if config.yml does not exist 
+    # load .env from SCRIPT_DIR
     else
         ENV_PATH="$SCRIPT_DIR/.env"
         init
-        
         # check if dlstreamer-pipeline-server is running
         get_status
         # load the payload
         load_payload
-        
         # Launch pipelines based on arguments
         launch_pipelines_from_args "$@"
     fi
@@ -381,9 +375,9 @@ main() {
     # Reconstruct the arguments from the modified array
     set -- "${args[@]}"
 
-    # no arguments provided, start all pipelines
+    # no arguments provided, start only the first pipeline
     if [[ -z "$1" ]]; then
-        echo "No pipeline specified. Starting all pipelines..."
+        echo "No pipeline specified. Starting the first pipeline."
         start_pipelines
         return
     fi
@@ -433,7 +427,7 @@ main() {
                     usage
                     exit 1
                 fi
-                # Collect all pipeline names until we hit another option or end
+                # Collect all pipeline names until another option is hit or its the end
                 pipelines=()
                 while [[ $# -gt 0 && ! "$1" =~ ^- ]]; do
                     pipelines+=("$1")
@@ -455,43 +449,6 @@ main() {
         esac
     done
     start_pipelines
-    
-
-
-#     case "$1" in
-#         -i | --instance)
-#             # set variable INSTANCE_NAME to its value, else keep it empty
-#             INSTANCE_NAME="$1"
-#             if [[ -z "$INSTANCE_NAME" ]]; then
-#                 INSTANCE_NAME=""
-#             fi
-#             shift
-#             ;;
-#     --all)
-#         echo "Starting all pipelines..."
-#         start_pipelines
-#         ;;
-#     -p | --pipeline)
-#         # Check if the next argument is provided and not empty, and loop through all pipelines and launch them
-#         shift
-#         if [[ -z "$1" ]]; then
-#             err "--pipeline requires a non-empty argument."
-#             usage
-#             exit 1
-#         else
-#             start_pipelines "$@"
-#         fi
-#         ;;
-#     -h | --help)
-#         usage
-#         exit 0
-#         ;;
-#     *)
-#         err "Invalid option '$1'."
-#         usage
-#         exit 1
-#         ;;
-#     esac
 }
 
 main "$@"

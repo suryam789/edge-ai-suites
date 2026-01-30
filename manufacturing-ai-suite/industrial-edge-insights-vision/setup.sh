@@ -1,39 +1,18 @@
 #!/bin/bash
-# Download artifacts for a specific sample application
+# Download artifacts for a specific sample application 
 #   by calling respective app's setup.sh script
 
 SCRIPT_DIR=$(dirname $(readlink -f "$0"))
-CONFIG_FILE="$SCRIPT_DIR/config.yml"
+CONFIG_FILE="$SCRIPT_DIR/config.yml"      # Config file path for multiple instances
 
 err() {
     echo "ERROR: $1" >&2
 }
 
-init() {
+init() { 
     if [[ -f "$CONFIG_FILE" ]]; then
-    # Parse config and process each instance
-    # sample config.yml content:        
-        #   pallet-defect-detection:
-        #     pdd1:
-        #         NGINX_HTTP_PORT: 8080
-        #         NGINX_HTTPS_PORT: 8443
-        #         COTURN_UDP_PORT: 3478
-        #         MINIO_EXTERNAL_PORT: 8001
-        #     pdd2:
-        #         NGINX_HTTP_PORT: 9080
-        #         NGINX_HTTPS_PORT: 9443
-        #         COTURN_UDP_PORT: 3479
-        #         MINIO_EXTERNAL_PORT: 9001
-        #   weld-porosity:
-        #     weld1:
-        #         NGINX_HTTP_PORT: 10080
-        #         NGINX_HTTPS_PORT: 10443
-        #         COTURN_UDP_PORT: 3480
-        #         MINIO_EXTERNAL_PORT: 10001
-    # parse config.yml to get SAMPLE_APP, INSTANCE_ID and their key-value pairs
-    # call set_permission for each SAMPLE_APP like pallet-defect-detection, weld-porosity etc
-    # call init_instance for each INSTANCE_ID under SAMPLE_APP with key-value pairs
-    # Get unique sample apps and set permissions for each
+    # Multi-instance setup
+    # Parse config.yml to set up all instances
         awk '
         /^[a-zA-Z_][a-zA-Z0-9_-]*:/ {
             sample_app = $1
@@ -46,12 +25,37 @@ init() {
         done
         echo "Parsing config file: $CONFIG_FILE"
 
-        while IFS='|' read -r sample_app instance_id env_vars; do
-            init_instance "$sample_app" "$instance_id" "$env_vars"            
+        # Initialize counters and arrays for summary
+        local instance_count=0
+        local instance_names=()
+        local sample_app_names=()
+        
+        while IFS='|' read -r sample_app instance_name env_vars; do
+            if init_instance "$sample_app" "$instance_name" "$env_vars"; then
+                ((instance_count++))
+                instance_names+=("$instance_name")
+                # Add to sample_app_names if not already present
+                if [[ ! " ${sample_app_names[@]} " =~ " ${sample_app} " ]]; then
+                    sample_app_names+=("$sample_app")
+                fi
+            else
+                err "Failed to initialize instance $sample_app/$instance_name"
+            fi
         done < <(parse_config_yml)
         
-        echo "All instances setup completed"        
+        # Validate at least one instance was initialized
+        if [[ $instance_count -eq 0 ]]; then
+            err "No instances were initialized from config file. Check config.yml format."
+            exit 1
+        fi
+        
+        # Print summary
+        echo "Setup Summary for multi instances:"
+        echo "  Number of Sample Apps: ${#sample_app_names[@]}"
+        echo "  Number of Instances in config.yml: $instance_count"
+        echo "All instances setup completed"
     else
+        # Single instance setup
         # load environment variables from .env file if it exists
         if [[ -f "$SCRIPT_DIR/.env" ]]; then
             export $(grep -v -E '^\s*#' "$SCRIPT_DIR/.env" | sed -e 's/#.*$//' -e '/^\s*$/d' | xargs)
@@ -90,7 +94,7 @@ init() {
     fi
 }
 
-# Function to parse YAML and extract SAMPLE_APP, INSTANCE_ID, and their key-value pairs
+# Function to parse YAML and extract SAMPLE_APP, INSTANCE_NAME, and their key-value pairs
 parse_config_yml() {
     if [[ ! -f "$CONFIG_FILE" ]]; then
         err "Config file $CONFIG_FILE not found."
@@ -100,7 +104,7 @@ parse_config_yml() {
     awk '
     BEGIN { 
         sample_app = ""
-        instance_id = ""
+        instance_name = ""
         vars = ""
     }
     # Skip empty lines and comments
@@ -109,24 +113,24 @@ parse_config_yml() {
     
     # Level 1: SAMPLE_APP (no leading spaces, ends with colon)
     /^[a-zA-Z_][a-zA-Z0-9_-]*:/ {
-        if (sample_app != "" && instance_id != "" && vars != "") {
-            print sample_app "|" instance_id "|" vars
+        if (sample_app != "" && instance_name != "" && vars != "") {
+            print sample_app "|" instance_name "|" vars
         }
         sample_app = $1
         gsub(/:/, "", sample_app)
-        instance_id = ""
+        instance_name = ""
         vars = ""
         next
     }
     
-    # Level 2: INSTANCE_ID (2 spaces indent, ends with colon)
+    # Level 2: INSTANCE_NAME (2 spaces indent, ends with colon)
     /^  [a-zA-Z_][a-zA-Z0-9_-]*:/ {
-        if (instance_id != "" && vars != "") {
-            print sample_app "|" instance_id "|" vars
+        if (instance_name != "" && vars != "") {
+            print sample_app "|" instance_name "|" vars
         }
-        instance_id = $1
-        gsub(/^[[:space:]]+/, "", instance_id)
-        gsub(/:/, "", instance_id)
+        instance_name = $1
+        gsub(/^[[:space:]]+/, "", instance_name)
+        gsub(/:/, "", instance_name)
         vars = ""
         next
     }
@@ -146,23 +150,24 @@ parse_config_yml() {
     }
     
     END {
-        if (sample_app != "" && instance_id != "" && vars != "") {
-            print sample_app "|" instance_id "|" vars
+        if (sample_app != "" && instance_name != "" && vars != "") {
+            print sample_app "|" instance_name "|" vars
         }
     }
     ' "$CONFIG_FILE"
 }
 
+# Function to initialize a single instance
 init_instance() {
     local SAMPLE_APP=$1
-    local INSTANCE_ID=$2
+    local INSTANCE_NAME=$2
     local ENV_VARS=$3
     
-    echo "Setting up: $SAMPLE_APP / $INSTANCE_ID"
+    echo "Setting up: $SAMPLE_APP / $INSTANCE_NAME"
     
     
-    # Create temp_apps/SAMPLE_APP/INSTANCE_ID directory structure
-    TEMP_APP_DIR="$SCRIPT_DIR/temp_apps/$SAMPLE_APP/$INSTANCE_ID"
+    # Create temp_apps/SAMPLE_APP/INSTANCE_NAME directory structure
+    TEMP_APP_DIR="$SCRIPT_DIR/temp_apps/$SAMPLE_APP/$INSTANCE_NAME"
     if [[ ! -d "$TEMP_APP_DIR" ]]; then
         mkdir -p "$TEMP_APP_DIR"
         echo "Created directory: $TEMP_APP_DIR"
@@ -205,16 +210,11 @@ init_instance() {
     
     # Append instance-specific environment variables to the .env file
     echo "" >> "$TEMP_APP_DIR/.env"
-    echo "# Instance-specific variables for $SAMPLE_APP/$INSTANCE_ID" >> "$TEMP_APP_DIR/.env"
-    echo "INSTANCE_NAME=$INSTANCE_ID" >> "$TEMP_APP_DIR/.env"
+    echo "# Instance-specific variables for $SAMPLE_APP/$INSTANCE_NAME" >> "$TEMP_APP_DIR/.env"
+    echo "INSTANCE_NAME=$INSTANCE_NAME" >> "$TEMP_APP_DIR/.env"
     
     # Parse and append the ENV_VARS
     IFS=',' read -ra VARS <<< "$ENV_VARS"
-    # for var in "${VARS[@]}"; do
-    #     echo "$var" >> "$TEMP_APP_DIR/.env"
-    #     echo "Added $var to .env"
-    # done
-
     # Update instance-specific environment variables to the TEMP_APP_DIR/.env file. append if not exist
     # loop through each variable and update or append
     for var in "${VARS[@]}"; do
@@ -241,9 +241,9 @@ init_instance() {
     # Export variables from the instance .env file
     export $(grep -v -E '^\s*#' "$TEMP_APP_DIR/.env" | sed -e 's/#.*$//' -e '/^\s*$/d' | xargs)
     
-    # Run the setup script for this instance
+    # Run the setup script for this instance 
     if [[ -f "$SOURCE_APP_DIR/setup.sh" ]]; then
-        echo "Running setup script for $SAMPLE_APP/$INSTANCE_ID"
+        echo "Running setup script for $SAMPLE_APP/$INSTANCE_NAME"
         chmod +x "$SOURCE_APP_DIR/setup.sh"
         bash "$SOURCE_APP_DIR/setup.sh"
     else
@@ -251,7 +251,7 @@ init_instance() {
         return 1
     fi
     
-    echo "Completed setup for $SAMPLE_APP/$INSTANCE_ID"
+    echo "Completed setup for $SAMPLE_APP/$INSTANCE_NAME"
     echo ""
 }
 
@@ -365,9 +365,8 @@ main() {
             exit 1
         fi
     else
-        # initialize the compose based sample app, load env
+        # initialize the compose based sample app, load env from config.yml or .env
         init
-        # APP_DIR="$SCRIPT_DIR/apps/$SAMPLE_APP"
     fi
 }
 

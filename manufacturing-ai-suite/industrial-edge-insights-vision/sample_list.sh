@@ -66,15 +66,15 @@ list_pipelines() {
         # get the loaded pipelines
         get_loaded_pipelines
         return
-        
+
     # if config.yml exists and INSTANCE_NAME is not set
     # Process all instances from config.yml
     elif [[ -f "$CONFIG_FILE" && -z "$INSTANCE_NAME" ]]; then
         while IFS='|' read -r sample_app instance_name; do
             echo ""
-            echo "=========================================="
+            echo "-------------------------------------------"
             echo "Status of: $instance_name (SAMPLE_APP: $sample_app)"
-            echo "=========================================="
+            echo "-------------------------------------------"
             
             ENV_PATH="$SCRIPT_DIR/temp_apps/$sample_app/$instance_name/.env"
             init
@@ -86,36 +86,17 @@ list_pipelines() {
             
         done < <(parse_config_yml)
         return
-    # else if config.yml does not exist then load .env from SCRIPT_DIR and call init
+    # if config.yml does not exist
+    # load .env from SCRIPT_DIR
     else
         ENV_PATH="$SCRIPT_DIR/.env"
         init
-        
         # check if dlstreamer-pipeline-server is running
         get_status
-        
         # get the loaded pipelines
         get_loaded_pipelines
         return
     fi
-
-#     # initialize the sample app, load env
-#     init
-#     # check if dlstreamer-pipeline-server is running
-#     get_status
-#     # get loaded pipelines
-#     response=$(curl -s -k -w "\n%{http_code}" https://$CURL_HOST_IP/api/pipelines)
-#     # Split response and status
-#     body=$(echo "$response" | sed '$d')
-#     status=$(echo "$response" | tail -n1)
-#     # Check if the status is 200 OK
-#     if [[ "$status" -ne 200 ]]; then
-#         err "Failed to get pipelines from dlstreamer-pipeline-server. HTTP Status Code: $status"
-#         exit 1
-#     else
-#         echo "Loaded pipelines:"
-#         echo "$body"
-#     fi
 
 }
 
@@ -135,7 +116,7 @@ get_loaded_pipelines() {
     fi
 }
 
-#Function to parse config.yml if it is present and extract SAMPLE_APP and INSTANCE_ID
+# Function to parse config.yml and extract SAMPLE_APP, INSTANCE_NAME, and their key-value pairs
 parse_config_yml() {
     if [[ ! -f "$CONFIG_FILE" ]]; then
         err "Config file $CONFIG_FILE not found."
@@ -167,8 +148,7 @@ parse_config_yml() {
     ' "$CONFIG_FILE"
 }
 
-
-# Get SAMPLE_APP for a given INSTANCE_NAME
+# Function to get SAMPLE_APP for a given INSTANCE_NAME from config.yml
 get_sample_app() {
     if [[ -z "$INSTANCE_NAME" ]]; then
         err "INSTANCE_NAME not set"
@@ -240,6 +220,7 @@ usage() {
     echo "Arguments:"
     echo "  helm                            For Helm deployment (adds :30443 port to HOST_IP for curl commands)"
     echo "Options:"
+    echo "  -i, --instance <instance_name>  Specify the instance name to get the status of a specific instance from config.yml"
     echo "  -h, --help                      Show this help message"
 }
 
