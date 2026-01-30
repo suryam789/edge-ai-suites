@@ -56,6 +56,7 @@ services:
         - VIDEO_FILE=/app/videos/face-demographics-walking.mp4
         - DEVICE=CPU
         - AGGREGATOR_ADDRESS=localhost:50051
+        - CONTROL_PORT=8083
       depends_on:
         - aggregator-service
 

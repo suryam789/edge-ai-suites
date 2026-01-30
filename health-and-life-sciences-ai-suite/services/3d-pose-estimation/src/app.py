@@ -10,11 +10,14 @@ import numpy as np
 from collections import deque
 from pathlib import Path
 import argparse
+import threading
+import os
 
 # Import our modules
 from inference import PoseInference
 from pose_encoder import PoseEncoder
 from publisher import GrpcPosePublisher
+from controller_start_stop import start_control_server, is_processing_enabled
 
 
 class PoseEstimationService:
@@ -101,10 +104,24 @@ class PoseEstimationService:
             return
 
         print(f"[INFO] Processing video from: {video_source}")
+        print(f"[INFO] Waiting for start command...")
+
+        # Wait for start command
+        while not is_processing_enabled():
+            time.sleep(1)
+
+        print(f"[INFO] Processing enabled! Starting pose estimation...")
         print(f"[INFO] Press Ctrl+C to stop")
 
         try:
             while True:
+                # Check if processing is still enabled
+                if not is_processing_enabled():
+                    print("[INFO] Processing paused, waiting for resume...")
+                    while not is_processing_enabled():
+                        time.sleep(1)
+                    print("[INFO] Processing resumed")
+
                 ret, frame = cap.read()
                 if not ret:
                     print("[INFO] Video stream ended")
@@ -178,6 +195,11 @@ class PoseEstimationService:
 
 
 def main():
+    # Start control server in background thread
+    control_thread = threading.Thread(target=start_control_server, daemon=True)
+    control_thread.start()
+    control_port = os.getenv("CONTROL_PORT", "8083")
+    print(f"[INFO] Control server started on port {control_port}")
     
     parser = argparse.ArgumentParser(description="3D Pose Estimation Service")
     parser.add_argument("--model", required=True, help="Path to OpenVINO IR model XML")
