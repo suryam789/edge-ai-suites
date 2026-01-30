@@ -94,7 +94,7 @@ init() {
     fi
 }
 
-# Function to parse YAML and extract SAMPLE_APP, INSTANCE_NAME, and their key-value pairs
+# Function to parse config.yml and extract SAMPLE_APP, INSTANCE_NAME, and their key-value pairs
 parse_config_yml() {
     if [[ ! -f "$CONFIG_FILE" ]]; then
         err "Config file $CONFIG_FILE not found."
