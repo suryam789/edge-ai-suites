@@ -30,6 +30,13 @@ WORKLOAD_TYPE = os.getenv("WORKLOAD_TYPE", "mdpnp")
 # Metrics service base URL (same host, different port, via host networking)
 METRICS_SERVICE_URL = os.getenv("METRICS_SERVICE_URL", "http://localhost:9000")
 
+# Downstream service URLs (host networking: use localhost inside containers)
+AI_ECG_BASE_URL = os.getenv("AI_ECG_BASE_URL", "http://localhost:8000")
+DDS_BRIDGE_CONTROL_URL = os.getenv("DDS_BRIDGE_CONTROL_URL", "http://localhost:8082")
+
+# Global streaming switch controlled via /start and /stop
+STREAMING_ENABLED: bool = False
+
 
 def _proxy_metrics_get(path: str):
     """Helper to proxy a GET request to the metrics-service.
@@ -51,6 +58,39 @@ def _proxy_metrics_get(path: str):
         raise HTTPException(status_code=502, detail="Invalid JSON from metrics-service")
 
     return JSONResponse(content=data, status_code=200)
+
+
+async def _broadcast_if_enabled(message: dict):
+    """Send event to SSE clients only when global streaming is enabled."""
+    if not STREAMING_ENABLED:
+        return
+    await sse_manager.broadcast(message)
+
+
+def _set_streaming(enabled: bool):
+    global STREAMING_ENABLED
+    STREAMING_ENABLED = enabled
+    state = "ENABLED" if enabled else "DISABLED"
+    print(f"[Aggregator] Global streaming {state}")
+
+
+async def _ensure_ai_ecg_task_running():
+    """Start AI-ECG polling loop if not already running."""
+    task = getattr(app.state, "ai_ecg_task", None)
+    if task is None or task.done():
+        app.state.ai_ecg_task = asyncio.create_task(ai_ecg_polling_loop())
+
+
+async def _stop_ai_ecg_task():
+    """Cancel AI-ECG polling loop if running."""
+    task = getattr(app.state, "ai_ecg_task", None)
+    if task is not None and not task.done():
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+        app.state.ai_ecg_task = None
 
 
 @app.get("/events")
@@ -113,6 +153,62 @@ async def memory_usage():
     return _proxy_metrics_get("/memory")
 
 
+@app.post("/start")
+async def start_workloads(target: str = Query("all", description="Which workload to start: ai-ecg, dds-bridge, or all")):
+    """Wrapper API for UI to start streaming.
+
+    - For ai-ecg: calls backend /start on the AI-ECG service.
+    - For dds-bridge: calls /start on the DDS-Bridge control endpoint (if enabled).
+    """
+    targets = {t.strip() for t in target.split(",")} if target else {"all"}
+    results: dict[str, str] = {}
+
+    def _call(url: str):
+        try:
+            resp = requests.post(url, timeout=3)
+            return f"{resp.status_code}: {resp.text}"
+        except Exception as exc:
+            return f"error: {exc}"
+
+    # Turn on local streaming and background tasks
+    _set_streaming(True)
+    await _ensure_ai_ecg_task_running()
+
+    if "all" in targets or "ai-ecg" in targets:
+        results["ai-ecg"] = _call(f"{AI_ECG_BASE_URL}/start")
+
+    if "all" in targets or "dds-bridge" in targets:
+        results["dds-bridge"] = _call(f"{DDS_BRIDGE_CONTROL_URL}/start")
+
+    return {"status": "ok", "results": results}
+
+
+@app.post("/stop")
+async def stop_workloads(target: str = Query("all", description="Which workload to stop: ai-ecg, dds-bridge, or all")):
+    """Wrapper API for UI to stop streaming for selected workloads."""
+    targets = {t.strip() for t in target.split(",")} if target else {"all"}
+    results: dict[str, str] = {}
+
+    def _call(url: str):
+        try:
+            resp = requests.post(url, timeout=3)
+            return f"{resp.status_code}: {resp.text}"
+        except Exception as exc:
+            return f"error: {exc}"
+
+    # Turn off local streaming and stop background tasks
+    _set_streaming(False)
+    await _stop_ai_ecg_task()
+
+    if "all" in targets or "ai-ecg" in targets:
+        results["ai-ecg"] = _call(f"{AI_ECG_BASE_URL}/stop")
+
+    if "all" in targets or "dds-bridge" in targets:
+        results["dds-bridge"] = _call(f"{DDS_BRIDGE_CONTROL_URL}/stop")
+
+    return {"status": "ok", "results": results}
+
+
 class VitalService(vital_pb2_grpc.VitalServiceServicer):
     """gRPC service that receives Vital streams and enqueues aggregated results."""
 
@@ -122,6 +218,13 @@ class VitalService(vital_pb2_grpc.VitalServiceServicer):
 
     def StreamVitals(self, request_iterator, context):
         for vital in request_iterator:
+            # If global streaming is disabled, drop incoming vitals
+            # without processing or logging. dds-bridge may still be
+            # sending them, but they are effectively ignored until
+            # /start is called on the aggregator.
+            if not STREAMING_ENABLED:
+                continue
+
             # Infer event type based on presence of waveform samples
             event_type = "waveform" if len(vital.waveform) > 0 else "numeric"
 
@@ -142,10 +245,9 @@ class VitalService(vital_pb2_grpc.VitalServiceServicer):
                     "timestamp": vital.timestamp,                    
                     "payload": result,
                 }
-                print("[Aggregator] Broadcasting message to SSE clients:", message)
                 if event_loop is not None:
                     asyncio.run_coroutine_threadsafe(
-                        sse_manager.broadcast(message), event_loop
+                        _broadcast_if_enabled(message), event_loop
                     )
         return Empty()
 
@@ -191,7 +293,7 @@ class PoseService(pose_pb2_grpc.PoseServiceServicer):
             print("[Aggregator] Received PoseFrame from gRPC:", message)
             if event_loop is not None:
                 asyncio.run_coroutine_threadsafe(
-                    sse_manager.broadcast(message), event_loop
+                    _broadcast_if_enabled(message), event_loop
                 )
 
             return pose_pb2.Ack(ok=True)
@@ -215,8 +317,9 @@ async def ai_ecg_polling_loop():
                 "payload": result,
             }
             if event_loop is not None:
-                await sse_manager.broadcast(message)
-            print("[Aggregator] Broadcasted AI-ECG result", message)
+                await _broadcast_if_enabled(message)
+            if STREAMING_ENABLED:
+                print("[Aggregator] Broadcasted AI-ECG result", message)
         await asyncio.sleep(1.0)
 
 
@@ -240,8 +343,8 @@ async def on_startup():
     global event_loop
     event_loop = asyncio.get_running_loop()
 
-    # Start background AI-ECG polling task
-    app.state.ai_ecg_task = asyncio.create_task(ai_ecg_polling_loop())
+    # Do not start AI-ECG polling until /start is called
+    app.state.ai_ecg_task = None
 
     # Start gRPC server in a background thread
     t = threading.Thread(target=start_grpc_server, daemon=True)

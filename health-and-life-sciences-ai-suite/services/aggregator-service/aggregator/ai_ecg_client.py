@@ -26,6 +26,13 @@ class AIECGClient:
         """
         try:
             resp = requests.get(self.url, timeout=5)
+
+            # 204 / 503 are used by the AI-ECG backend to indicate
+            # "no content" or "streaming disabled"; treat them as a
+            # quiet "no data" signal instead of an error.
+            if resp.status_code in (204, 503):
+                return None
+
             resp.raise_for_status()
             data = resp.json()
 

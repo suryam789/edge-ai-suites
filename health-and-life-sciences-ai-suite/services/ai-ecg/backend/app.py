@@ -23,11 +23,36 @@ engine = ECGInferenceEngine()
 # ---- STREAM STATE (VERY IMPORTANT) ----
 stream_files = []
 stream_index = 0
+streaming_enabled = False
 
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.post("/start")
+def start_streaming():
+    """Enable streaming responses for /predict_stream_next.
+
+    UI should call this endpoint when the user clicks the global
+    "start" button so that subsequent polling begins returning data.
+    """
+    global streaming_enabled
+    streaming_enabled = True
+    return {"status": "started"}
+
+
+@app.post("/stop")
+def stop_streaming():
+    """Disable streaming responses for /predict_stream_next.
+
+    When disabled, /predict_stream_next will return HTTP 204 so the
+    aggregator can stop broadcasting without failing.
+    """
+    global streaming_enabled
+    streaming_enabled = False
+    return {"status": "stopped"}
 
 
 @app.post("/upload")
@@ -70,7 +95,13 @@ def predict_stream_next():
     Returns ONE file inference per call.
     Cycles through files endlessly.
     """
-    global stream_files, stream_index
+    global stream_files, stream_index, streaming_enabled
+
+    # If streaming is disabled, indicate "no content" to the caller.
+    if not streaming_enabled:
+        # 204 is intentionally not treated as an error by the
+        # aggregator; it simply means "no new data".
+        raise HTTPException(status_code=204, detail="Streaming disabled")
 
     if not stream_files:
         stream_files = sorted(

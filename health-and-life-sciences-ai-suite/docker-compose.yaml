@@ -35,13 +35,13 @@ services:
       - aggregator-service
     network_mode: "host"
 
-  ai-ecg:
-    build:
-      context: ./services/ai-ecg/backend
-      dockerfile: Dockerfile
-    image: intel/hl-ai-ecg:1.0.0
-    container_name: ai-ecg
-    network_mode: "host"
+  # ai-ecg:
+  #   build:
+  #     context: ./services/ai-ecg/backend
+  #     dockerfile: Dockerfile
+  #   image: intel/hl-ai-ecg:1.0.0
+  #   container_name: ai-ecg
+  #   network_mode: "host"
 
   # 3dpose-service:
   #     build:
