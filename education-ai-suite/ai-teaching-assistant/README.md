@@ -70,3 +70,4 @@ This arms detection and opens a normal voice session after the wake word is dete
 - Standalone/manual service run: [docs/user-guide/get-started/run-standalone.md](docs/user-guide/get-started/run-standalone.md)
 - Troubleshooting: [docs/user-guide/troubleshooting.md](docs/user-guide/troubleshooting.md)
 - Release notes: [docs/user-guide/release-notes.md](docs/user-guide/release-notes.md)
+  
