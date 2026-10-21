@@ -977,6 +977,46 @@ foreach ($Service in $Services) {
 }
 
 # =============================================================================
+# STEP 8: Wake-word backend selection
+# =============================================================================
+
+Write-Header "WAKE-WORD BACKEND"
+
+# Update an existing KEY=value line in a .env file, or append it if missing.
+function Set-EnvValue {
+    param([string]$File, [string]$Key, [string]$Value)
+    if (-not (Test-Path $File)) { return }
+    $pattern = "^\s*$([regex]::Escape($Key))="
+    $lines = @(Get-Content $File)
+    if ($lines -match $pattern) {
+        $lines = $lines | ForEach-Object {
+            if ($_ -match $pattern) { "$Key=$Value" } else { $_ }
+        }
+        Set-Content -Path $File -Value $lines
+    }
+    else {
+        Add-Content -Path $File -Value "$Key=$Value"
+    }
+}
+
+$EnvFile = Join-Path $ScriptDir ".env"
+$WakeBackend = "software"
+if (-not $Silent) {
+    Write-Info "Choose how the hands-free wake word is detected:"
+    Write-Host "  [1] Software - openWakeWord on CPU (works on any machine)" -ForegroundColor White
+    Write-Host "  [2] Hardware - Intel always-on DSP / MVA (needs an MVA-enabled Intel device)" -ForegroundColor White
+    $choice = Read-Host "Select wake-word backend [1-2] (default: 1)"
+    if ($choice.Trim() -eq "2") { $WakeBackend = "hardware" }
+}
+Set-EnvValue -File $EnvFile -Key "ATA_WAKEWORD_BACKEND" -Value $WakeBackend
+Write-Success "Wake-word backend set to '$WakeBackend'."
+if ($WakeBackend -eq "hardware") {
+    Write-Info "Hardware wake uses ATA's own packaged voice-activation host; MvaApplicationOne is not used."
+    Write-Info "Build and install wakeword-agent\package.ps1 -Install, then run start_wakeword.ps1 to arm it."
+}
+Write-Info "Change this later by editing ATA_WAKEWORD_BACKEND in .env."
+
+# =============================================================================
 # COMPLETION
 # =============================================================================
 

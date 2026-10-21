@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    ATA Wake Agent - thin native front door for the Intel always-on DSP path.
+    Its only job: get woken by the DSP (via Windows ConversationalAgent),
+    verify the keyword, then trigger a normal ATA session over kiosk-core REST.
+    The ASR/RAG/LLM/TTS pipeline is unchanged and lives in the Python services.
+
+    Build (needs the Windows 10 SDK 19041+ and .NET 8 SDK):
+      dotnet build -c Release
+
+    The Windows.* WinRT APIs (ConversationalAgent, ActivationSignalDetector)
+    are projected automatically by the net8.0-windows10.0.19041.0 TFM; no
+    extra package reference is required.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>AtaWakeAgent</AssemblyName>
+    <RootNamespace>AtaWakeAgent</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="activation-host\**\*.cs" />
+  </ItemGroup>
+
+</Project>

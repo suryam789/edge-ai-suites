@@ -59,6 +59,30 @@ python mic_session.py --wakeword --wakeword-model "hey jarvis"
 
 This arms detection and opens a normal voice session after the wake word is detected.
 
+### Choosing a wake-word backend (software or hardware)
+
+The wake word can be served by one of two backends, selected with
+`ATA_WAKEWORD_BACKEND` in [.env](.env):
+
+| Backend | Value | Notes |
+|---|---|---|
+| Software (default) | `software` | openWakeWord on the CPU. Works on any machine. |
+| Hardware | `hardware` | ATA's packaged Windows voice-activation agent hands DSP wakes to the existing session worker. Requires the UWP activation host to be built and installed on an Intel DSP device with a provisioned keyword model. |
+
+`setup_windows.ps1` prompts for this during setup; you can change it later by
+editing `.env`. Launch the selected backend with:
+
+```powershell
+.\start_wakeword.ps1
+```
+
+The hardware path uses ATA's own UWP activation host and full-trust session
+worker; it does not launch MvaApplicationOne. Build and install the package
+from [wakeword-agent](wakeword-agent/README.md), then run `start_wakeword.ps1`
+to arm ATA's DSP configuration. If the package or hardware is unavailable,
+the launcher uses `ATA_WAKEWORD_FALLBACK` (default `software`).
+
+
 ## Documentation Map
 
 - Overview: [docs/user-guide/index.md](docs/user-guide/index.md)
